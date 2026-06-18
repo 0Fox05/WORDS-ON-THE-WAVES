@@ -6,6 +6,6 @@ WORDS ON THE WAVES where you are a bookseller, your work is to manage book and s
 - Colorful graphics
 - Training your logical thinking skill
 ## System Flow Diagram
-![SFD](docs/BookManage.PNG)
+![SFD](docs/BookManage.JPEG)
 ## Gameplay
 
