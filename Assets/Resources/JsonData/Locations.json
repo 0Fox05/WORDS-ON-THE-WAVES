@@ -1,0 +1,24 @@
+{
+  "Locations": [
+    {
+      "Name": "Waterfront Square",
+      "TravelFee": 9,
+      "TargetCustomers": ["Historians", "Tourists", "Kids" ]
+    },
+    {
+      "Name": "Café Liberté",
+      "TravelFee": 16,
+      "TargetCustomers": [ "Classic Lovers", "Fantasy Fans", "Students" ]
+    },
+    {
+      "Name": "Méga Marché",
+      "TravelFee": 10,
+      "TargetCustomers": [ "Travelers", "Students", "Kids" ]
+    },
+    {
+      "Name": "Far Beach",
+      "TravelFee": 16,
+      "TargetCustomers": [ "Collectors", "Tourists", "Fantasy Fans" ]
+    }
+  ]
+}
