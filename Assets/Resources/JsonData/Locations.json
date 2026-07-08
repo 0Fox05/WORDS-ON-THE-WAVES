@@ -1,24 +1,24 @@
 {
   "Locations": [
     {
-      "Name": "Waterfront Square",
-      "TravelFee": 9,
-      "TargetCustomers": ["Historians", "Tourists", "Kids" ]
+      "Name": "Central Square",
+      "TravelFee": 6,
+      "TargetCustomers": ["Classic", "Travel", "Kids" ]
     },
     {
-      "Name": "Café Liberté",
-      "TravelFee": 16,
-      "TargetCustomers": [ "Classic Lovers", "Fantasy Fans", "Students" ]
+      "Name": "Morning Cafe",
+      "TravelFee": 13,
+      "TargetCustomers": [ "Crime", "Fantasy", "Drama","Fact" ]
     },
     {
-      "Name": "Méga Marché",
+      "Name": "Grad Station",
       "TravelFee": 10,
-      "TargetCustomers": [ "Travelers", "Students", "Kids" ]
+      "TargetCustomers": [ "Travel", "Fact", "Crime" ]
     },
     {
-      "Name": "Far Beach",
+      "Name": "Far Horizons",
       "TravelFee": 16,
-      "TargetCustomers": [ "Collectors", "Tourists", "Fantasy Fans" ]
+      "TargetCustomers": [ "Classic", "Kids", "Drama","Fantasy"]
     }
   ]
 }

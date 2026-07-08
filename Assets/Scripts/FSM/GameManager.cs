@@ -4,12 +4,30 @@ public class GameManager : MonoBehaviour
 {
     public GameState CurrentState;
     public static GameManager Instance;
+    public string TheChosenLocation;
+    public int point;
+
     private void Awake()
     {
         Instance = this;
     }
+    public void start()
+    {
+
+    }
+
+    public void IncreasePoint()
+    {
+        point += 1;
+        Debug.Log("Point increased by 1");
+    }
+    public void ResetPoint()
+    {
+        point = 0;
+    }
     public enum GameState
     {
+        Home,
         Menu,
         Cargo,
         Preparation,
@@ -21,17 +39,21 @@ public class GameManager : MonoBehaviour
 
         switch (newState)
         {
+            case GameState.Home:
+                UIManager.Instance.ShowHome();
+                break;
             case GameState.Menu:
                 UIManager.Instance.ShowMenu();
                 break;
             case GameState.Cargo:
-                UIManager.Instance.ShowCargo();
+                UIManager.Instance.ShowDecor();
                 break;
             case GameState.Preparation:
                 UIManager.Instance.ShowPreparation();
                 break;
             case GameState.Service:
-                UIManager.Instance.ShowService();
+                TheChosenLocation = UIManager.Instance.ChosenLocation;
+                UIManager.Instance.ShowService(TheChosenLocation);
                 break;
         }
     }

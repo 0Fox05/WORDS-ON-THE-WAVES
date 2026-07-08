@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 public enum BookCategory
@@ -11,7 +12,7 @@ public enum BookCategory
     Travel
 }
 
-[System.Serializable]
+[Serializable]
 public class MapLocation
 {
     public string Name;
@@ -19,30 +20,79 @@ public class MapLocation
     public List<string> TargetCustomers;
 }
 
-[System.Serializable]
-public class DropRateEntry
+[Serializable]
+public class DropRate
 {
-    public BookCategory Category;
+    public string Category;   
     public float Rate;
 }
 
-[System.Serializable]
-public class BookCrate
+[Serializable]
+public class Crate
 {
     public string Name;
     public float Price;
     public int TotalBooks;
-    public List<DropRateEntry> DropRates;
+    public List<DropRate> DropRates;
 }
 
-[System.Serializable]
+[Serializable]
+public class CrateConfig
+{
+    public List<Crate> Crates;
+}
+
+[Serializable]
 public class LocationConfig
 {
     public List<MapLocation> Locations;
 }
 
-[System.Serializable]
-public class CrateConfig
+[Serializable]
+public class PlayerBookEntry
 {
-    public List<BookCrate> Crates;
+    public BookCategory Category;
+    public int Have;
 }
+
+[Serializable]
+public class PlayerCartEntry
+{
+    public string Name;
+    public int Have;
+}
+
+[Serializable]
+public class PlayerData
+{
+    public List<PlayerBookEntry> Books;
+    public List<PlayerCartEntry> ItemsCart;  
+    public int Money;
+}
+
+[Serializable]
+public class DialogueEntry
+{
+    public string CorrectBook;
+    public List<string> lines;
+}
+
+[Serializable]
+public class DialogueLData
+{
+    public List<DialogueEntry> Question;
+}
+
+[Serializable]
+public class ShopItem
+{
+    public string Name;
+    public int Money;
+}
+
+[Serializable]
+public class ShopConfig
+{
+    public List<ShopItem> ItemsShop;
+}
+
