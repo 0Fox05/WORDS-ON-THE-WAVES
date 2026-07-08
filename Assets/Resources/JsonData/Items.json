@@ -1,0 +1,36 @@
+{
+    "ItemsShop": [
+        {
+            "Name": "WindChime",
+            "Money": 50
+        },
+        {
+            "Name": "Board",
+            "Money": 50
+        },
+        {
+            "Name": "DecoBoat",
+            "Money": 50
+        },
+        {
+            "Name": "Table",
+            "Money": 50
+        },
+        {
+            "Name": "Chair1",
+            "Money": 50
+        },
+        {
+            "Name": "Chair2",
+            "Money": 50
+        },
+        {
+            "Name": "LED",
+            "Money": 50
+        },
+        {
+            "Name": "Tree",
+            "Money": 50
+        }
+    ]
+}

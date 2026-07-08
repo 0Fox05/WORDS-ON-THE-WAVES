@@ -1,0 +1,46 @@
+{
+  "Crates": [
+    {
+      "Name": "Second-hand Crate",
+      "Price": 20.0,
+      "TotalBooks": 12,
+      "DropRates": [
+        { "Category": "Crime", "Rate": 0.15 },
+        { "Category": "Drama", "Rate": 0.15 },
+        { "Category": "Fact", "Rate": 0.1 },
+        { "Category": "Fantasy", "Rate": 0.15 },
+        { "Category": "Classic", "Rate": 0.2 },
+        { "Category": "Kids", "Rate": 0.15 },
+        { "Category": "Travel", "Rate": 0.1 }
+      ]
+    },
+    {
+      "Name": "Thematic Crate",
+      "Price": 30.0,
+      "TotalBooks": 16,
+      "DropRates": [
+        { "Category": "Crime", "Rate": 0.15 },
+        { "Category": "Drama", "Rate": 0.2 },
+        { "Category": "Fact", "Rate": 0.15 },
+        { "Category": "Fantasy", "Rate": 0.2 },
+        { "Category": "Classic", "Rate": 0.15 },
+        { "Category": "Kids", "Rate": 0.1 },
+        { "Category": "Travel", "Rate": 0.05 }
+      ]
+    },
+    {
+      "Name": "Mystery Antique Crate",
+      "Price": 50.0,
+      "TotalBooks": 22,
+      "DropRates": [
+        { "Category": "Crime", "Rate": 0.2 },
+        { "Category": "Drama", "Rate": 0.15 },
+        { "Category": "Fact", "Rate": 0.1 },
+        { "Category": "Fantasy", "Rate": 0.15 },
+        { "Category": "Classic", "Rate": 0.2 },
+        { "Category": "Kids", "Rate": 0.1 },
+        { "Category": "Travel", "Rate": 0.1 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "Locations": [
+    {
+      "Name": "Central Square",
+      "TravelFee": 6,
+      "TargetCustomers": ["Classic", "Travel", "Kids" ]
+    },
+    {
+      "Name": "Morning Cafe",
+      "TravelFee": 13,
+      "TargetCustomers": [ "Crime", "Fantasy", "Drama","Fact" ]
+    },
+    {
+      "Name": "Grad Station",
+      "TravelFee": 10,
+      "TargetCustomers": [ "Travel", "Fact", "Crime" ]
+    },
+    {
+      "Name": "Far Horizons",
+      "TravelFee": 16,
+      "TargetCustomers": [ "Classic", "Kids", "Drama","Fantasy"]
+    }
+  ]
+}
