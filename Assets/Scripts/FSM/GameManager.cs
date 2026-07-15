@@ -44,16 +44,21 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.Menu:
                 UIManager.Instance.ShowMenu();
+                CartDeco.Instance.UpdateItems();
                 break;
             case GameState.Cargo:
                 UIManager.Instance.ShowDecor();
                 break;
             case GameState.Preparation:
                 UIManager.Instance.ShowPreparation();
+                CartDeco.Instance.UpdateItems();
                 break;
             case GameState.Service:
                 TheChosenLocation = UIManager.Instance.ChosenLocation;
                 UIManager.Instance.ShowService(TheChosenLocation);
+                CartDeco.Instance.UpdateItems();
+                BookCalculate.Instance.UpdateUI();
+                CartDeco.Instance.RefreshItems();
                 break;
         }
     }

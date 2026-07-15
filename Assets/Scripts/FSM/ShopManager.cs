@@ -1,8 +1,13 @@
 using UnityEngine;
+using TMPro;
+using System.Collections.Generic;
 
 public class ShopManager : MonoBehaviour
 {
     public static ShopManager Instance;
+
+    [Header("UI References")]
+    public List<TextMeshProUGUI> books; // Assign in Inspector in the order: Crime, Drama, Fact, Fantasy, Classic, Kids, Travel
 
     private void Awake()
     {
@@ -31,13 +36,15 @@ public class ShopManager : MonoBehaviour
         DataManager.Instance.ChangeMoney(-(int)crate.Price);
         Debug.Log($"Bought crate: {crate.Name} for {crate.Price}");
 
-        // Give books based on drop rates
+        // Track results per category
+        Dictionary<BookCategory, int> results = new Dictionary<BookCategory, int>();
+
+        // Roll books
         for (int i = 0; i < crate.TotalBooks; i++)
         {
             string category = RollCategory(crate);
             if (System.Enum.TryParse(category, out BookCategory bookCategory))
             {
-                // Ensure category exists in PlayerData before adding
                 var entry = DataManager.Instance.PlayerData.Books.Find(b => b.Category == bookCategory);
                 if (entry == null)
                 {
@@ -46,6 +53,10 @@ public class ShopManager : MonoBehaviour
                 }
 
                 DataManager.Instance.ChangeBookCount(bookCategory, 1);
+
+                if (!results.ContainsKey(bookCategory))
+                    results[bookCategory] = 0;
+                results[bookCategory]++;
             }
             else
             {
@@ -53,8 +64,35 @@ public class ShopManager : MonoBehaviour
             }
         }
 
-        // Show crate UI only after successful purchase
+        // Show crate UI
         UIManager.Instance.BoxGetUI.SetActive(true);
+
+        // Clear all slots
+        foreach (var t in books)
+            t.text = string.Empty;
+
+        // Update UI in the order you assigned in Inspector
+        SetCategoryText(BookCategory.Crime, results, 0);
+        SetCategoryText(BookCategory.Drama, results, 1);
+        SetCategoryText(BookCategory.Fact, results, 2);
+        SetCategoryText(BookCategory.Fantasy, results, 3);
+        SetCategoryText(BookCategory.Classic, results, 4);
+        SetCategoryText(BookCategory.Kids, results, 5);
+        SetCategoryText(BookCategory.Travel, results, 6);
+    }
+
+    private void SetCategoryText(BookCategory category, Dictionary<BookCategory, int> results, int index)
+    {
+        if (index >= books.Count) return;
+
+        if (results.TryGetValue(category, out int count))
+        {
+            books[index].text = $"{count}";
+        }
+        else
+        {
+            books[index].text = $"0";
+        }
     }
 
     private string RollCategory(Crate crate)
@@ -69,7 +107,6 @@ public class ShopManager : MonoBehaviour
                 return rate.Category;
         }
 
-        // Fallback in case of rounding errors
         return crate.DropRates[crate.DropRates.Count - 1].Category;
     }
 }

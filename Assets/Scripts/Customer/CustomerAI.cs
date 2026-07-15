@@ -15,7 +15,6 @@ public class CustomerAI : MonoBehaviour
     public Button yesButton;
     public Button noButton;
 
-    // These still come from the spawner
     private GameObject bookSelectionPanel;
     private List<Button> bookButtons;
     private List<Sprite> bookSprites;
@@ -23,11 +22,12 @@ public class CustomerAI : MonoBehaviour
     [Header("Other References (set by spawner)")]
     public Transform spawnLocation;
     public Transform cartLocation;
-    public List<TextMeshProUGUI> texts;
+    public List<TextMeshProUGUI> texts; // Crime, Drama, Fact, Fantasy, Classic, Kids, Travel
     public CustomerSpawner spawner;
 
     private NavMeshAgent agent;
     private bool goingToCart = true;
+    private bool isProcessing = false; // ✅ prevents double routines
     private int questionsAsked = 0;
 
     private DialogueLData dialogueData;
@@ -44,7 +44,6 @@ public class CustomerAI : MonoBehaviour
         if (questionPanel != null) questionPanel.SetActive(false);
         if (bookSelectionPanel != null) bookSelectionPanel.SetActive(false);
 
-        // Hook up buttons (Inspector-assigned)
         if (yesButton != null)
         {
             yesButton.onClick.RemoveAllListeners();
@@ -56,29 +55,10 @@ public class CustomerAI : MonoBehaviour
             noButton.onClick.AddListener(() => OnAnswer(false));
         }
 
-        // Dialogue setup
         string locationName = UIManager.Instance.ChosenLocation;
         DataManager.Instance.LoadDialogue(locationName);
         dialogueData = DataManager.Instance.dialogueData;
 
-        if (dialogueData != null && dialogueData.Question.Count > 0)
-        {
-            foreach (var entry in dialogueData.Question)
-            {
-                if (Enum.TryParse(entry.CorrectBook, true, out BookCategory cat))
-                {
-                    var playerEntry = DataManager.Instance.PlayerData.Books.Find(b => b.Category == cat);
-                    if (playerEntry != null && playerEntry.Have > 0)
-                    {
-                        correctCategory = cat;
-                        currentDialogueLines = entry.lines;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Start moving to cart
         if (agent != null && cartLocation != null)
         {
             agent.SetDestination(cartLocation.position);
@@ -94,7 +74,6 @@ public class CustomerAI : MonoBehaviour
         cartLocation = cart;
         texts = textList;
 
-        // These are still passed from spawner
         bookSelectionPanel = bookPanel;
         bookButtons = buttons;
         bookSprites = sprites;
@@ -106,12 +85,14 @@ public class CustomerAI : MonoBehaviour
     {
         if (agent == null || !agent.isOnNavMesh) return;
 
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        // ✅ Tightened arrival check
+        if (!isProcessing && !agent.pathPending && agent.remainingDistance <= 0.05f)
         {
             if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
             {
                 if (goingToCart)
                 {
+                    isProcessing = true;
                     StartCoroutine(WaitForTurn());
                 }
                 else
@@ -139,25 +120,44 @@ public class CustomerAI : MonoBehaviour
             yield return null;
         }
 
-        // Decide behavior: 70% dialogue, 30% instant purchase
         float chance = UnityEngine.Random.value;
-        bool canDoDialogue = (currentDialogueLines != null && currentDialogueLines.Count > 0);
 
-        if (chance <= 0.7f && canDoDialogue)
+        if (chance <= 0.7f && dialogueData != null && dialogueData.Question.Count > 0)
         {
-            // Dialogue path
-            AskQuestion();
+            var shuffled = dialogueData.Question.OrderBy(x => UnityEngine.Random.value).ToList();
+            foreach (var entry in shuffled)
+            {
+                if (Enum.TryParse(entry.CorrectBook, true, out BookCategory cat))
+                {
+                    int index = (int)cat;
+                    if (index < texts.Count && int.TryParse(texts[index].text, out int value))
+                    {
+                        if (value > 0)
+                        {
+                            correctCategory = cat;
+                            currentDialogueLines = entry.lines;
+                            AskQuestion();
+                            yield break;
+                        }
+                        else
+                        {
+                            spawner.ReleaseLock(this);
+                            StartCoroutine(InstantPurchaseRoutine());
+                            yield break;
+                        }
+                    }
+                }
+            }
+
+            spawner.ReleaseLock(this);
+            StartCoroutine(InstantPurchaseRoutine());
         }
         else
         {
-            // Release lock right away since no dialogue
             spawner.ReleaseLock(this);
-
-            // Instant purchase path
             StartCoroutine(InstantPurchaseRoutine());
         }
     }
-
 
     void AskQuestion()
     {
@@ -175,11 +175,16 @@ public class CustomerAI : MonoBehaviour
         bookSelectionPanel.SetActive(true);
 
         List<BookCategory> choices = new List<BookCategory> { correctCategory };
+        var allCategories = Enum.GetValues(typeof(BookCategory)).Cast<BookCategory>().ToList();
+        var availableCategories = allCategories.Where(c =>
+        {
+            int idx = (int)c;
+            return idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0;
+        }).ToList();
 
-        var allCategories = System.Enum.GetValues(typeof(BookCategory)).Cast<BookCategory>().ToList();
-        var randomOthers = allCategories.Where(c => c != correctCategory)
-                                        .OrderBy(x => UnityEngine.Random.value)
-                                        .Take(2);
+        var randomOthers = availableCategories.Where(c => c != correctCategory)
+                                              .OrderBy(x => UnityEngine.Random.value)
+                                              .Take(2);
         choices.AddRange(randomOthers);
 
         for (int i = 0; i < bookButtons.Count; i++)
@@ -193,7 +198,7 @@ public class CustomerAI : MonoBehaviour
                 bookButtons[i].image.sprite = bookSprites[index];
 
                 bookButtons[i].onClick.RemoveAllListeners();
-                bookButtons[i].onClick.AddListener(() => OnBookChosen(cat));
+                bookButtons[i].onClick.AddListener(() => OnBookChosenDialogue(cat));
             }
             else
             {
@@ -202,20 +207,10 @@ public class CustomerAI : MonoBehaviour
         }
     }
 
-    void OnBookChosen(BookCategory chosenCategory)
+    // Dialogue purchase flow: buy correct book + 1 more
+    void OnBookChosenDialogue(BookCategory chosenCategory)
     {
-        Debug.Log($"Player chose {chosenCategory}");
-
-        DataManager.Instance.ChangeBookCount(chosenCategory, -1);
-
-        int index = (int)chosenCategory;
-        if (index < texts.Count && texts[index] != null)
-        {
-            if (int.TryParse(texts[index].text, out int value))
-            {
-                texts[index].text = Mathf.Max(0, value - 1).ToString();
-            }
-        }
+        HandleBookPurchase(chosenCategory);
 
         if (chosenCategory == correctCategory)
         {
@@ -228,6 +223,16 @@ public class CustomerAI : MonoBehaviour
             Debug.Log("Wrong book, normal sale +5 money");
         }
 
+        // Buy one more book based on weighted probability
+        BookCategory extra = BookCalculate.Instance.GetWeightedRandomCategory();
+        int idx = (int)extra;
+        if (idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0)
+        {
+            HandleBookPurchase(extra);
+            DataManager.Instance.ChangeMoney(5);
+        }
+
+        BookCalculate.Instance.UpdateUI();
         bookSelectionPanel.SetActive(false);
         questionPanel.SetActive(false);
 
@@ -235,7 +240,29 @@ public class CustomerAI : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(spawnLocation.position);
         goingToCart = false;
+        isProcessing = false; // reset
         GameManager.Instance.ResetPoint();
+    }
+
+    // Instant purchase flow: buy 1 or 2 books
+    void OnBookChosenInstant(BookCategory chosenCategory)
+    {
+        HandleBookPurchase(chosenCategory);
+        DataManager.Instance.ChangeMoney(5);
+        BookCalculate.Instance.UpdateUI();
+    }
+
+    void HandleBookPurchase(BookCategory chosenCategory)
+    {
+        Debug.Log($"Player chose {chosenCategory}");
+
+        int index = (int)chosenCategory;
+        if (index < texts.Count && int.TryParse(texts[index].text, out int value))
+        {
+            texts[index].text = Mathf.Max(0, value - 1).ToString();
+        }
+
+        DataManager.Instance.ChangeBookCount(chosenCategory, -1);
     }
 
     public void OnAnswer(bool playerChoiceCorrect)
@@ -257,26 +284,33 @@ public class CustomerAI : MonoBehaviour
             ShowBookSelection();
         }
     }
+
     IEnumerator InstantPurchaseRoutine()
     {
-        yield return new WaitForSeconds(10f);
+        yield return new WaitForSeconds(5f);
 
-        var available = DataManager.Instance.PlayerData.Books
-            .Where(b => b.Have > 0)
-            .Select(b => b.Category)
-            .ToList();
+        int booksToBuy = UnityEngine.Random.Range(1, 3); // 1 or 2
 
-        if (available.Count > 0)
+        for (int i = 0; i < booksToBuy; i++)
         {
-            BookCategory chosen = available[UnityEngine.Random.Range(0, available.Count)];
-            OnBookChosen(chosen);
+            BookCategory chosen = BookCalculate.Instance.GetWeightedRandomCategory();
+
+            int index = (int)chosen;
+            if (index < texts.Count && int.TryParse(texts[index].text, out int value) && value > 0)
+            {
+                OnBookChosenInstant(chosen);
+            }
+            else
+            {
+                break;
+            }
+
+            yield return new WaitForSeconds(0.5f);
         }
-        else
-        {
-            // No books available, just leave
-            agent.isStopped = false;
-            agent.SetDestination(spawnLocation.position);
-            goingToCart = false;
-        }
+
+        agent.isStopped = false;
+        agent.SetDestination(spawnLocation.position);
+        goingToCart = false;
+        isProcessing = false; // reset
     }
 }

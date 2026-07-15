@@ -3,6 +3,7 @@ using TMPro;
 using Unity.Cinemachine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -56,6 +57,8 @@ public class UIManager : MonoBehaviour
     public List<TextMeshProUGUI> STravelTexts;
     public Button LetsGoButton;
     public Button BackButton;
+    public GameObject LoadingScreen;
+    public CanvasGroup LoadingCanvasGroup;
 
     [Header("Service Panels")]
     public GameObject ServicePanel;
@@ -84,9 +87,10 @@ public class UIManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        PlayButton.onClick.AddListener(ShowMenu);
+        PlayButton.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Menu));
         LetsGoButton.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Service));
-        BackButton.onClick.AddListener(ShowMenu);
+        BackButton.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Menu));
+        LoadingScreen.SetActive(false);
         // Loop
         foreach (Button btn in StoreButtons)
         {
@@ -98,7 +102,7 @@ public class UIManager : MonoBehaviour
         }
         foreach (Button btn in DecorButtons)
         {
-            btn.onClick.AddListener(ShowDecor);
+            btn.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Cargo));
         }
         foreach (Button btn in ConfirmButtons)
         {
@@ -125,7 +129,7 @@ public class UIManager : MonoBehaviour
             }
 
             Maps[index].onClick.AddListener(() => SavingLocation(locationName));
-            Maps[index].onClick.AddListener(() => ShowPreparation());
+            Maps[index].onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Preparation));
         }
 
         for (int i = 0; i < CrateSoldFilters.Count; i++)
@@ -298,6 +302,9 @@ public class UIManager : MonoBehaviour
 
     private void ActivateCamera(int index)
     {
+        // Call the coroutine for loading screen
+        StartCoroutine(ShowLoadingScreen());
+
         for (int i = 0; i < cameras.Length; i++)
         {
             if (cameras[i] != null)
@@ -372,6 +379,7 @@ public class UIManager : MonoBehaviour
 
             DataManager.Instance.SavePlayer();
             UpdatePlayerDataUI();
+            CartDeco.Instance.UpdateItems();
             Debug.Log($"Bought {itemName} for {shopItem.Money}");
         }
         else
@@ -385,7 +393,7 @@ public class UIManager : MonoBehaviour
         foreach (var text in MoneyTexts)
         {
             if (text != null)
-                text.text = $"${money}";
+                text.text = $"{money}";
         }
     }
     public void UpdatePlayerDataUI()
@@ -479,6 +487,30 @@ public class UIManager : MonoBehaviour
         {
             if (t != null) t.text = maxValue.ToString();
         }
+    }
+    private IEnumerator ShowLoadingScreen()
+    {
+        if (LoadingScreen != null)
+        {
+            LoadingScreen.SetActive(true);
+            LoadingCanvasGroup.alpha = 1f; // fully visible
+        }
+
+        // Wait 3 seconds
+        yield return new WaitForSeconds(3f);
+
+        // Fade out over 1 second
+        float duration = 1f;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            LoadingCanvasGroup.alpha = Mathf.Lerp(1f, 0f, t / duration);
+            yield return null;
+        }
+
+        // Hide completely
+        LoadingScreen.SetActive(false);
     }
     public void CleanUIShop()
     {

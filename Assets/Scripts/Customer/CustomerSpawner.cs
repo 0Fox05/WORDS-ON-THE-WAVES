@@ -6,7 +6,9 @@ using UnityEngine.UI;
 
 public class CustomerSpawner : MonoBehaviour
 {
-    public GameObject customerPrefab;
+    [Header("Customer Prefabs (assign multiple)")]
+    public List<GameObject> customerPrefabs;   // instead of single prefab
+
     public Transform spawnPoint;
     public Transform bookCartArea;
     public float spawnInterval = 20f;
@@ -22,8 +24,8 @@ public class CustomerSpawner : MonoBehaviour
 
     // Book selection UI references
     public GameObject bookSelectionPanel;
-    public List<Button> bookButtons; // assign 7 buttons in Inspector
-    public List<Sprite> bookSprites; // assign 7 sprites in Inspector (same order as texts)
+    public List<Button> bookButtons; 
+    public List<Sprite> bookSprites; 
 
     private Coroutine spawnRoutine;
 
@@ -76,13 +78,17 @@ public class CustomerSpawner : MonoBehaviour
 
     void SpawnCustomer()
     {
-        GameObject npc = Instantiate(customerPrefab, spawnPoint.position, Quaternion.identity);
+        if (customerPrefabs == null || customerPrefabs.Count == 0) return;
+
+        // Pick random prefab from list
+        GameObject prefab = customerPrefabs[Random.Range(0, customerPrefabs.Count)];
+
+        GameObject npc = Instantiate(prefab, spawnPoint.position, Quaternion.identity);
 
         CustomerAI ai = npc.GetComponent<CustomerAI>();
         if (ai == null)
             ai = npc.AddComponent<CustomerAI>();
 
-        // Pass spawn, cart, texts, and UI references into CustomerAI
         ai.Initialize(spawnPoint, bookCartArea, texts,
               bookSelectionPanel, bookButtons, bookSprites, this);
     }
