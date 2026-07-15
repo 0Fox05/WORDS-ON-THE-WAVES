@@ -28,6 +28,7 @@ public class UIManager : MonoBehaviour
 
     [Header("Menu Maps Panels")]
     public Button[] Maps;
+    public List<GameObject> MapCanNot;
 
     public GameObject BuyBoxPanel;
     public GameObject BuyItemPanel;
@@ -125,7 +126,6 @@ public class UIManager : MonoBehaviour
             }
 
             Maps[index].onClick.AddListener(() => SavingLocation(locationName));
-            Maps[index].onClick.AddListener(() => ShowPreparation());
         }
 
         for (int i = 0; i < CrateSoldFilters.Count; i++)
@@ -206,6 +206,7 @@ public class UIManager : MonoBehaviour
     {
         HideAll();
         MenuPanel.SetActive(true);
+        ShowMapCan();
         Debug.Log("Showing Menu UI");
     }
 
@@ -246,8 +247,68 @@ public class UIManager : MonoBehaviour
     }
     public void SavingLocation(string location)
     {
-        ChosenLocation = location;
+        // Find the location entry in DataManager
+        var locEntry = DataManager.Instance.LocationData.Locations
+            .Find(l => l.Name == location);
+
+        if (locEntry != null)
+        {
+            int currentMoney = DataManager.Instance.GetMoney();
+
+            if (currentMoney >= locEntry.TravelFee)
+            {
+                // Player has enough money, save the location
+                ChosenLocation = location;
+                ShowPreparation();
+                Debug.Log($"Location {location} saved. Travel fee: {locEntry.TravelFee}");
+            }
+            else
+            {
+                // Not enough money, block saving
+                Debug.LogWarning($"Not enough money to choose {location}. Fee: {locEntry.TravelFee}, Current: {currentMoney}");
+                // Optionally: show a UI popup here to inform the player
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Location {location} not found in LocationData!");
+        }
     }
+    public void ShowMapCan()
+    {
+        int currentMoney = DataManager.Instance.GetMoney();
+
+        // Step 1: deactivate all overlays first
+        for (int i = 0; i < MapCanNot.Count; i++)
+        {
+            if (MapCanNot[i] != null)
+                MapCanNot[i].SetActive(false);
+        }
+
+        // Step 2: check each location and activate overlay if not affordable
+        for (int i = 0; i < Maps.Length; i++)
+        {
+            string locName = "";
+            switch (i)
+            {
+                case 0: locName = "Far Horizons"; break;
+                case 1: locName = "Morning Cafe"; break;
+                case 2: locName = "Grad Station"; break;
+                case 3: locName = "Central Square"; break;
+            }
+
+            var locEntry = DataManager.Instance.LocationData.Locations
+                .Find(l => l.Name == locName);
+
+            if (locEntry != null && currentMoney < locEntry.TravelFee)
+            {
+                if (i < MapCanNot.Count && MapCanNot[i] != null)
+                    MapCanNot[i].SetActive(true);
+            }
+        }
+        Debug.LogWarning($"Map Scan Ran");
+    }
+
     public void ShowPreparation()
     {
         HideAll();
@@ -341,8 +402,6 @@ public class UIManager : MonoBehaviour
             // Do nothing: no filter, no disable
         }
     }
-
-
 
     private void OnBuyItemClicked(string itemName)
     {
