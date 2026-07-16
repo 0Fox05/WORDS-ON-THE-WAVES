@@ -7,47 +7,34 @@ using UnityEngine.UI;
 public class CustomerSpawner : MonoBehaviour
 {
     [Header("Customer Prefabs (assign multiple)")]
-    public List<GameObject> customerPrefabs;   // instead of single prefab
+    public List<GameObject> customerPrefabs;
 
     public Transform spawnPoint;
     public Transform bookCartArea;
     public float spawnInterval = 20f;
 
-    // Ordered list: Crime, Drama, Fact, Fantasy, Classic, Kids, Travel
     public List<TextMeshProUGUI> texts;
-
-    // Popup UI references (assign in Inspector)
     public GameObject questionPanel;
     public TextMeshProUGUI questionText;
     public Button yesButton;
     public Button noButton;
-
-    // Book selection UI references
-    public GameObject bookSelectionPanel;
-    public List<Button> bookButtons; 
-    public List<Sprite> bookSprites; 
+    public List<Sprite> bookSprites;
 
     private Coroutine spawnRoutine;
+    private Dictionary<BookCategory, Sprite> spriteMap;
 
-    // Global lock system
-    private CustomerAI activeCustomer;
-
-    public bool TryLock(CustomerAI ai)
+    void Awake()
     {
-        if (activeCustomer == null)
+        spriteMap = new Dictionary<BookCategory, Sprite>
         {
-            activeCustomer = ai;
-            return true;
-        }
-        return false;
-    }
-
-    public void ReleaseLock(CustomerAI ai)
-    {
-        if (activeCustomer == ai)
-        {
-            activeCustomer = null;
-        }
+            { BookCategory.Crime,   bookSprites[0] },
+            { BookCategory.Drama,   bookSprites[1] },
+            { BookCategory.Fact,    bookSprites[2] },
+            { BookCategory.Fantasy, bookSprites[3] },
+            { BookCategory.Classic, bookSprites[4] },
+            { BookCategory.Kids,    bookSprites[5] },
+            { BookCategory.Travel,  bookSprites[6] }
+        };
     }
 
     void Update()
@@ -80,16 +67,21 @@ public class CustomerSpawner : MonoBehaviour
     {
         if (customerPrefabs == null || customerPrefabs.Count == 0) return;
 
-        // Pick random prefab from list
         GameObject prefab = customerPrefabs[Random.Range(0, customerPrefabs.Count)];
-
         GameObject npc = Instantiate(prefab, spawnPoint.position, Quaternion.identity);
 
         CustomerAI ai = npc.GetComponent<CustomerAI>();
         if (ai == null)
             ai = npc.AddComponent<CustomerAI>();
 
-        ai.Initialize(spawnPoint, bookCartArea, texts,
-              bookSelectionPanel, bookButtons, bookSprites, this);
+        ai.Initialize(spawnPoint, bookCartArea, texts, spriteMap, this);
+
+        // ✅ Give each customer a unique offset near the cart
+        Vector3 offset = new Vector3(Random.Range(-1.5f, 1.5f), 0, Random.Range(-1.5f, 1.5f));
+        UnityEngine.AI.NavMeshAgent agent = npc.GetComponent<UnityEngine.AI.NavMeshAgent>();
+        if (agent != null)
+        {
+            agent.SetDestination(bookCartArea.position + offset);
+        }
     }
 }

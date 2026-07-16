@@ -1,0 +1,65 @@
+{
+  "Question":[
+{
+  "CorrectBook": "Fact",
+  "lines": [
+    "I need a book that explains real history events",
+    "Something informative with true details",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Fact",
+  "lines": [
+    "I want a book about science and discoveries",
+    "Something that teaches me real knowledge",
+    "Can you suggest any book?."
+  ]
+},{
+  "CorrectBook": "Fantasy",
+  "lines": [
+    "I want a book full of magic and mythical creatures",
+    "Something that takes me to another world",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Fantasy",
+  "lines": [
+    "Give me a book with dragons and epic battles",
+    "Something adventurous with enchanted lands",
+    "Can you suggest any book?."
+  ]
+},{
+  "CorrectBook": "Crime",
+  "lines": [
+    "I want a story about a mysterious murder case",
+    "Something with detectives solving puzzles",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Crime",
+  "lines": [
+    "Give me a book full of suspense and criminal plots",
+    "I like stories where justice is served",
+    "Can you suggest any book?."
+  ]
+},{
+  "CorrectBook": "Drama",
+  "lines": [
+    "I’m looking for a book about family struggles",
+    "Something emotional with deep characters",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Drama",
+  "lines": [
+    "I want a book that explores love and heartbreak",
+    "Something that feels realistic and touching",
+    "Can you suggest any book?."
+  ]
+}
+  ]
+}

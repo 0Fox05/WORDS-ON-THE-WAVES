@@ -26,9 +26,11 @@ public class UIManager : MonoBehaviour
     public Button[] ConfirmButtons;
     [Header("Crate Sold Filters")]
     public List<GameObject> CrateSoldFilters;   // assign in Inspector, same order as BuyBox
+    public List<GameObject> ItemHave;
 
     [Header("Menu Maps Panels")]
     public Button[] Maps;
+    public List<GameObject> MapCanNot;
 
     public GameObject BuyBoxPanel;
     public GameObject BuyItemPanel;
@@ -67,6 +69,7 @@ public class UIManager : MonoBehaviour
     public Button[] DecorButtons;
     public Button[] StoreButtons;
     [Header("PlayerData")]
+    public Button ResetToMenu;
     [Header("Money")]
     public List<TextMeshProUGUI> MoneyTexts;
     [Header("Number Crime have")]
@@ -87,11 +90,13 @@ public class UIManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+
+        // Keep functional listeners
         PlayButton.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Menu));
         LetsGoButton.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Service));
         BackButton.onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Menu));
         LoadingScreen.SetActive(false);
-        // Loop
+
         foreach (Button btn in StoreButtons)
         {
             btn.onClick.AddListener(ShowStore);
@@ -99,6 +104,7 @@ public class UIManager : MonoBehaviour
         foreach (Button btn in SettingButtons)
         {
             btn.onClick.AddListener(ShowSetting);
+            btn.onClick.AddListener(Paused);
         }
         foreach (Button btn in DecorButtons)
         {
@@ -109,6 +115,7 @@ public class UIManager : MonoBehaviour
             btn.onClick.AddListener(CleanUIShop);
         }
     }
+
     private void Start()
     {
         ShowHome();
@@ -129,7 +136,6 @@ public class UIManager : MonoBehaviour
             }
 
             Maps[index].onClick.AddListener(() => SavingLocation(locationName));
-            Maps[index].onClick.AddListener(() => GameManager.Instance.ChangeState(GameManager.GameState.Preparation));
         }
 
         for (int i = 0; i < CrateSoldFilters.Count; i++)
@@ -199,6 +205,21 @@ public class UIManager : MonoBehaviour
             // Add listener
             BuyItem[index].onClick.AddListener(() => OnBuyItemClicked(shopItem.Name));
         }
+        ResetToMenu.onClick.AddListener(() => ResetCall());
+        for (int i = 0; i < randomItems.Count && i < ItemHave.Count && i < BuyItem.Length; i++)
+        {
+            var shopItem = randomItems[i];
+            var cartItem = DataManager.Instance.PlayerData.ItemsCart.Find(c => c.Name == shopItem.Name);
+
+            bool owned = cartItem != null && cartItem.Have > 0;
+
+            ItemHave[i].SetActive(owned);          // show filter if owned
+            BuyItem[i].interactable = !owned;      // disable button if owned
+        }
+    }
+    public void ResetCall()
+    {
+        GameManager.Instance.BackResetMenu();
     }
     public void ShowHome()
     {
@@ -210,6 +231,7 @@ public class UIManager : MonoBehaviour
     {
         HideAll();
         MenuPanel.SetActive(true);
+        ShowMapCan();
         Debug.Log("Showing Menu UI");
     }
 
@@ -234,7 +256,14 @@ public class UIManager : MonoBehaviour
 
     public void ShowSetting()
     {
-        SettingPanel.SetActive(true);
+        if (!SettingPanel.activeSelf)
+        {
+            SettingPanel.SetActive(true);
+        }
+        else
+        {
+            SettingPanel.SetActive(false);
+        }
         Debug.Log("Showing Setting UI");
     }
 
@@ -250,7 +279,73 @@ public class UIManager : MonoBehaviour
     }
     public void SavingLocation(string location)
     {
-        ChosenLocation = location;
+        // Find the location entry in DataManager
+        var locEntry = DataManager.Instance.LocationData.Locations
+            .Find(l => l.Name == location);
+
+        if (locEntry != null)
+        {
+            int currentMoney = DataManager.Instance.GetMoney();
+
+            // Special case: Central Square is always allowed if money == 0
+            if (location == "Central Square" && currentMoney == 0)
+            {
+                ChosenLocation = location;
+                GameManager.Instance.ChangeState(GameManager.GameState.Preparation);
+                Debug.Log($"Special case: Player allowed to go to {location} with 0 money.");
+                return;
+            }
+
+            // Normal case: check travel fee
+            if (currentMoney >= locEntry.TravelFee)
+            {
+                ChosenLocation = location;
+                GameManager.Instance.ChangeState(GameManager.GameState.Preparation);
+                Debug.Log($"Location {location} saved. Travel fee: {locEntry.TravelFee}");
+            }
+            else
+            {
+                Debug.LogWarning($"Not enough money to choose {location}. Fee: {locEntry.TravelFee}, Current: {currentMoney}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Location {location} not found in LocationData!");
+        }
+    }
+    public void ShowMapCan()
+    {
+        int currentMoney = DataManager.Instance.GetMoney();
+
+        // Step 1: deactivate all overlays first
+        for (int i = 0; i < MapCanNot.Count; i++)
+        {
+            if (MapCanNot[i] != null)
+                MapCanNot[i].SetActive(false);
+        }
+
+        // Step 2: check each location and activate overlay if not affordable
+        for (int i = 0; i < Maps.Length; i++)
+        {
+            string locName = "";
+            switch (i)
+            {
+                case 0: locName = "Far Horizons"; break;
+                case 1: locName = "Morning Cafe"; break;
+                case 2: locName = "Grad Station"; break;
+                case 3: locName = "Central Square"; break;
+            }
+
+            var locEntry = DataManager.Instance.LocationData.Locations
+                .Find(l => l.Name == locName);
+
+            if (locEntry != null && currentMoney < locEntry.TravelFee)
+            {
+                if (i < MapCanNot.Count && MapCanNot[i] != null)
+                    MapCanNot[i].SetActive(true);
+            }
+        }
+        Debug.LogWarning($"Map Scan Ran");
     }
     public void ShowPreparation()
     {
@@ -381,12 +476,25 @@ public class UIManager : MonoBehaviour
             UpdatePlayerDataUI();
             CartDeco.Instance.UpdateItems();
             Debug.Log($"Bought {itemName} for {shopItem.Money}");
+
+            // ✅ Refresh filters and disable buttons
+            for (int i = 0; i < BuyItem.Length && i < ItemHave.Count; i++)
+            {
+                var candidate = DataManager.Instance.ShopData.ItemsShop.Find(s => INameTexts[i].text.StartsWith(s.Name));
+                if (candidate != null)
+                {
+                    var owned = DataManager.Instance.PlayerData.ItemsCart.Exists(c => c.Name == candidate.Name && c.Have > 0);
+                    ItemHave[i].SetActive(owned);
+                    BuyItem[i].interactable = !owned;
+                }
+            }
         }
         else
         {
             Debug.Log("Not enough money to buy " + itemName);
         }
     }
+
 
     public void UpdateMoneyUI(int money)
     {
@@ -488,6 +596,17 @@ public class UIManager : MonoBehaviour
             if (t != null) t.text = maxValue.ToString();
         }
     }
+    public void Paused()
+    {
+        if (Time.timeScale == 0f)
+        {
+            GameManager.Instance.ResumeGame();
+        }
+        else
+        {
+            GameManager.Instance.PauseGame();
+        }
+    }
     private IEnumerator ShowLoadingScreen()
     {
         if (LoadingScreen != null)
@@ -516,5 +635,9 @@ public class UIManager : MonoBehaviour
     {
         BoxGetUI.SetActive(false);
         ItemGetUI.SetActive(false);
+    }
+    public void PlaySoundButton()
+    {
+        SoundManager.Instance.PlayButtonClick();
     }
 }

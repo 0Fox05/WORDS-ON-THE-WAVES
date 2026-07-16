@@ -9,30 +9,37 @@ using System;
 
 public class CustomerAI : MonoBehaviour
 {
-    [Header("Question UI (assign in Inspector)")]
+    [Header("Question UI")]
     public GameObject questionPanel;
     public TextMeshProUGUI questionText;
     public Button yesButton;
     public Button noButton;
 
-    private GameObject bookSelectionPanel;
-    private List<Button> bookButtons;
-    private List<Sprite> bookSprites;
+    [Header("Book Selection (assign in Inspector)")]
+    public GameObject bookSelectionPanel;
+    public List<Button> bookButtons;   // assign 3 buttons directly in Inspector
+    private List<Sprite> bookSprites;  // comes from spawner
 
-    [Header("Other References (set by spawner)")]
+    [Header("Other References")]
     public Transform spawnLocation;
     public Transform cartLocation;
-    public List<TextMeshProUGUI> texts; // Crime, Drama, Fact, Fantasy, Classic, Kids, Travel
+    public List<TextMeshProUGUI> texts;
     public CustomerSpawner spawner;
 
     private NavMeshAgent agent;
     private bool goingToCart = true;
-    private bool isProcessing = false; // ✅ prevents double routines
+    private bool isProcessing = false;
     private int questionsAsked = 0;
 
     private DialogueLData dialogueData;
     private BookCategory correctCategory;
     private List<string> currentDialogueLines;
+    private Dictionary<BookCategory, Sprite> spriteMap;
+    private DialogueEntry currentEntry;   // ✅ holds the active dialogue entry
+
+
+    // Route flag
+    private bool useDialogueRoute;
 
     void Awake()
     {
@@ -67,25 +74,21 @@ public class CustomerAI : MonoBehaviour
     }
 
     public void Initialize(Transform spawn, Transform cart, List<TextMeshProUGUI> textList,
-                           GameObject bookPanel, List<Button> buttons, List<Sprite> sprites,
-                           CustomerSpawner spawnerRef)
+                       Dictionary<BookCategory, Sprite> spriteDictionary, CustomerSpawner spawnerRef)
     {
         spawnLocation = spawn;
         cartLocation = cart;
         texts = textList;
-
-        bookSelectionPanel = bookPanel;
-        bookButtons = buttons;
-        bookSprites = sprites;
-
         spawner = spawnerRef;
-    }
+        spriteMap = spriteDictionary;
 
+        float chance = UnityEngine.Random.value;
+        useDialogueRoute = (chance <= 0.7f);
+    }
     void Update()
     {
         if (agent == null || !agent.isOnNavMesh) return;
 
-        // ✅ Tightened arrival check
         if (!isProcessing && !agent.pathPending && agent.remainingDistance <= 0.05f)
         {
             if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
@@ -93,7 +96,11 @@ public class CustomerAI : MonoBehaviour
                 if (goingToCart)
                 {
                     isProcessing = true;
-                    StartCoroutine(WaitForTurn());
+
+                    if (useDialogueRoute)
+                        StartCoroutine(WaitForTurn());
+                    else
+                        StartCoroutine(InstantPurchaseRoutine());
                 }
                 else
                 {
@@ -105,125 +112,55 @@ public class CustomerAI : MonoBehaviour
 
     IEnumerator WaitForTurn()
     {
-        float waitTime = 120f;
-        float elapsed = 0f;
-
-        while (!spawner.TryLock(this))
-        {
-            elapsed += Time.deltaTime;
-            if (elapsed >= waitTime)
-            {
-                agent.SetDestination(spawnLocation.position);
-                goingToCart = false;
-                yield break;
-            }
-            yield return null;
-        }
-
-        float chance = UnityEngine.Random.value;
-
-        if (chance <= 0.7f && dialogueData != null && dialogueData.Question.Count > 0)
-        {
-            var shuffled = dialogueData.Question.OrderBy(x => UnityEngine.Random.value).ToList();
-            foreach (var entry in shuffled)
-            {
-                if (Enum.TryParse(entry.CorrectBook, true, out BookCategory cat))
-                {
-                    int index = (int)cat;
-                    if (index < texts.Count && int.TryParse(texts[index].text, out int value))
-                    {
-                        if (value > 0)
-                        {
-                            correctCategory = cat;
-                            currentDialogueLines = entry.lines;
-                            AskQuestion();
-                            yield break;
-                        }
-                        else
-                        {
-                            spawner.ReleaseLock(this);
-                            StartCoroutine(InstantPurchaseRoutine());
-                            yield break;
-                        }
-                    }
-                }
-            }
-
-            spawner.ReleaseLock(this);
-            StartCoroutine(InstantPurchaseRoutine());
-        }
-        else
-        {
-            spawner.ReleaseLock(this);
-            StartCoroutine(InstantPurchaseRoutine());
-        }
+        // No lock → just ask question immediately
+        AskQuestion();
+        yield break;
     }
 
     void AskQuestion()
     {
-        if (questionPanel != null && currentDialogueLines != null && questionsAsked < currentDialogueLines.Count)
+        // No spawner.activeCustomer check
+        if (currentEntry == null)
         {
-            questionPanel.SetActive(true);
-            questionText.text = currentDialogueLines[questionsAsked];
-            agent.isStopped = true;
+            var validEntries = dialogueData.Question.Where(entry =>
+            {
+                if (Enum.TryParse(entry.CorrectBook, true, out BookCategory cat))
+                {
+                    int idx = (int)cat;
+                    return idx < texts.Count &&
+                           int.TryParse(texts[idx].text, out int val) &&
+                           val > 0;
+                }
+                return false;
+            }).ToList();
+
+            if (validEntries.Count == 0)
+            {
+                // ✅ Fallback to instant purchase if no valid dialogue
+                StartCoroutine(InstantPurchaseRoutine());
+                return;
+            }
+
+            currentEntry = validEntries[UnityEngine.Random.Range(0, validEntries.Count)];
+            Enum.TryParse(currentEntry.CorrectBook, true, out correctCategory);
+            currentDialogueLines = currentEntry.lines;
         }
+
+        questionPanel.SetActive(true);
+        questionText.text = currentDialogueLines[questionsAsked];
+        agent.isStopped = true;
     }
 
-    void ShowBookSelection()
-    {
-        if (bookSelectionPanel == null) return;
-        bookSelectionPanel.SetActive(true);
-
-        List<BookCategory> choices = new List<BookCategory> { correctCategory };
-        var allCategories = Enum.GetValues(typeof(BookCategory)).Cast<BookCategory>().ToList();
-        var availableCategories = allCategories.Where(c =>
-        {
-            int idx = (int)c;
-            return idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0;
-        }).ToList();
-
-        var randomOthers = availableCategories.Where(c => c != correctCategory)
-                                              .OrderBy(x => UnityEngine.Random.value)
-                                              .Take(2);
-        choices.AddRange(randomOthers);
-
-        for (int i = 0; i < bookButtons.Count; i++)
-        {
-            if (i < choices.Count)
-            {
-                BookCategory cat = choices[i];
-                int index = (int)cat;
-
-                bookButtons[i].gameObject.SetActive(true);
-                bookButtons[i].image.sprite = bookSprites[index];
-
-                bookButtons[i].onClick.RemoveAllListeners();
-                bookButtons[i].onClick.AddListener(() => OnBookChosenDialogue(cat));
-            }
-            else
-            {
-                bookButtons[i].gameObject.SetActive(false);
-            }
-        }
-    }
-
-    // Dialogue purchase flow: buy correct book + 1 more
     void OnBookChosenDialogue(BookCategory chosenCategory)
     {
         HandleBookPurchase(chosenCategory);
 
         if (chosenCategory == correctCategory)
-        {
             DataManager.Instance.ChangeMoney(10);
-            Debug.Log("Correct book! +10 money");
-        }
         else
-        {
             DataManager.Instance.ChangeMoney(5);
-            Debug.Log("Wrong book, normal sale +5 money");
-        }
 
-        // Buy one more book based on weighted probability
+        // Extra book
         BookCategory extra = BookCalculate.Instance.GetWeightedRandomCategory();
         int idx = (int)extra;
         if (idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0)
@@ -236,15 +173,55 @@ public class CustomerAI : MonoBehaviour
         bookSelectionPanel.SetActive(false);
         questionPanel.SetActive(false);
 
-        spawner.ReleaseLock(this);
+        foreach (var btn in bookButtons)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.gameObject.SetActive(false);
+        }
+
         agent.isStopped = false;
         agent.SetDestination(spawnLocation.position);
         goingToCart = false;
-        isProcessing = false; // reset
+        isProcessing = false;
         GameManager.Instance.ResetPoint();
+        currentEntry = null;
+    }
+    void ShowBookSelection()
+    {
+        if (bookSelectionPanel == null) return;
+
+        bookSelectionPanel.SetActive(true);
+
+        List<BookCategory> choices = new List<BookCategory> { correctCategory };
+        var allCategories = Enum.GetValues(typeof(BookCategory)).Cast<BookCategory>().ToList();
+        var availableCategories = allCategories.Where(c =>
+        {
+            int idx = (int)c;
+            return idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0;
+        }).ToList();
+
+        choices.AddRange(availableCategories.Where(c => c != correctCategory)
+                                            .OrderBy(x => UnityEngine.Random.value)
+                                            .Take(2));
+
+        for (int i = 0; i < bookButtons.Count; i++)
+        {
+            if (i < choices.Count)
+            {
+                BookCategory cat = choices[i];
+
+                bookButtons[i].gameObject.SetActive(true);
+                bookButtons[i].image.sprite = spriteMap[cat]; // ✅ use dictionary
+                bookButtons[i].onClick.RemoveAllListeners();
+                bookButtons[i].onClick.AddListener(() => OnBookChosenDialogue(cat));
+            }
+            else
+            {
+                bookButtons[i].gameObject.SetActive(false);
+            }
+        }
     }
 
-    // Instant purchase flow: buy 1 or 2 books
     void OnBookChosenInstant(BookCategory chosenCategory)
     {
         HandleBookPurchase(chosenCategory);
@@ -254,35 +231,27 @@ public class CustomerAI : MonoBehaviour
 
     void HandleBookPurchase(BookCategory chosenCategory)
     {
-        Debug.Log($"Player chose {chosenCategory}");
-
         int index = (int)chosenCategory;
         if (index < texts.Count && int.TryParse(texts[index].text, out int value))
         {
             texts[index].text = Mathf.Max(0, value - 1).ToString();
         }
-
         DataManager.Instance.ChangeBookCount(chosenCategory, -1);
     }
 
     public void OnAnswer(bool playerChoiceCorrect)
     {
+        Debug.Log($"+{correctCategory}%");
         if (playerChoiceCorrect)
-        {
             GameManager.Instance.IncreasePoint();
-        }
 
         questionsAsked++;
         questionPanel.SetActive(false);
 
         if (questionsAsked < currentDialogueLines.Count)
-        {
             AskQuestion();
-        }
         else
-        {
             ShowBookSelection();
-        }
     }
 
     IEnumerator InstantPurchaseRoutine()
@@ -290,20 +259,15 @@ public class CustomerAI : MonoBehaviour
         yield return new WaitForSeconds(5f);
 
         int booksToBuy = UnityEngine.Random.Range(1, 3); // 1 or 2
-
         for (int i = 0; i < booksToBuy; i++)
         {
             BookCategory chosen = BookCalculate.Instance.GetWeightedRandomCategory();
-
             int index = (int)chosen;
             if (index < texts.Count && int.TryParse(texts[index].text, out int value) && value > 0)
             {
                 OnBookChosenInstant(chosen);
             }
-            else
-            {
-                break;
-            }
+            else break;
 
             yield return new WaitForSeconds(0.5f);
         }

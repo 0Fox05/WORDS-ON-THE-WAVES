@@ -1,0 +1,64 @@
+{
+  "Question":[
+  {
+  "CorrectBook": "Classic",
+  "lines": [
+    "Do you think i need to learn more about this Square?",
+    "I want a book with more detail on this.",
+    "Can you suggest any book?."
+  ]
+  },
+  {
+  "CorrectBook":"Kids",
+  "lines": [
+    "I need a book that teach basic words or creative thinking",
+    "I'm helping this kid with his imagination",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Classic",
+  "lines": [
+    "I want to know more about how this was build",
+    "I need to get a hand on how old it is",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Kids",
+  "lines": [
+    "Hey, can i get some bright colored book",
+    "The images should be interesting or these kids wouldn't care",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Fantasy",
+  "lines": [
+    "I want a book full of magic and mythical creatures",
+    "Something that takes me to another world",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Fantasy",
+  "lines": [
+    "Give me a book with dragons and epic battles",
+    "Something adventurous with enchanted lands",
+    "Can you suggest any book?."
+  ]
+},{
+  "CorrectBook": "Drama",
+  "lines": [
+    "I’m looking for a book about family struggles",
+    "Something emotional with deep characters",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Drama",
+  "lines": [
+    "I want a book that explores love and heartbreak",
+    "Something that feels realistic and touching",
+    "Can you suggest any book?."
+  ]
+}
+  ]
+}

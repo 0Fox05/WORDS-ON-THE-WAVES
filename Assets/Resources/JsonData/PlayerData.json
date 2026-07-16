@@ -9,14 +9,12 @@
       { "Category": "Travel", "Have": 0 }
     ],
     "ItemsCart": [
-      { "Name": "WindChime", "Have": 0 },
-      { "Name": "Board", "Have": 0 },
-      { "Name": "DecoBoat", "Have": 0 },
-      { "Name": "Table", "Have": 0 },
-      { "Name": "Chair1", "Have": 0 },
-      { "Name": "Chair2", "Have": 0 },
-      { "Name": "LED", "Have": 0 },
-      { "Name": "Tree", "Have": 0 }
+      { "Name": "WindChime", "Have": 0, "Active": false},
+      { "Name": "Board", "Have": 0 ,"Active": false},
+      { "Name": "DecoBoat", "Have": 0 ,"Active": false},
+      { "Name": "Table", "Have": 0 ,"Active": false},
+      { "Name": "LED", "Have": 0 ,"Active": false},
+      { "Name": "Tree", "Have": 0 ,"Active": false}
     ],
   "Money": 50
 }

@@ -1,0 +1,78 @@
+{
+  "Question":[
+  {
+  "CorrectBook": "Classic",
+  "lines": [
+    "Do you think i need to learn more about this Square?",
+    "I want a book with more detail on this.",
+    "Can you suggest any book?."
+  ]
+  },
+  {
+  "CorrectBook":"Kids",
+  "lines": [
+    "I need a book that teach basic words or creative thinking",
+    "I'm helping this kid with his imagination",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Classic",
+  "lines": [
+    "I want to know more about how this was build",
+    "I need to get a hand on how old it is",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Kids",
+  "lines": [
+    "Hey, can i get some bright colored book",
+    "The images should be interesting or these kids wouldn't care",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Travel",
+  "lines": [
+    "Hey i need to know what is this place called",
+    "I just got here and i need suggestion from tourist book",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Travel",
+  "lines": [
+    "Its the first time i saw something this interesting",
+    "I just need a guild to know what to take picture of",
+    "Can you suggest any book?."
+  ]
+  },{
+  "CorrectBook": "Crime",
+  "lines": [
+    "I want a story about a mysterious murder case",
+    "Something with detectives solving puzzles",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Crime",
+  "lines": [
+    "Give me a book full of suspense and criminal plots",
+    "I like stories where justice is served",
+    "Can you suggest any book?."
+  ]
+},{
+  "CorrectBook": "Fact",
+  "lines": [
+    "I need a book that explains real history events",
+    "Something informative with true details",
+    "Can you suggest any book?."
+  ]
+},
+{
+  "CorrectBook": "Fact",
+  "lines": [
+    "I want a book about science and discoveries",
+    "Something that teaches me real knowledge",
+    "Can you suggest any book?."
+  ]
+}
+  ]
+}
