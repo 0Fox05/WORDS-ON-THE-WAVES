@@ -12,12 +12,12 @@
     },
     {
       "Name": "Grad Station",
-      "TravelFee": 10,
-      "TargetCustomers": [ "Travel", "Fact", "Crime" ]
+      "TravelFee": 23,
+      "TargetCustomers": [ "Travel", "Fact", "Crime", "Classic", "Kids" ]
     },
     {
       "Name": "Far Horizons",
-      "TravelFee": 16,
+      "TravelFee": 15,
       "TargetCustomers": [ "Classic", "Kids", "Drama","Fantasy"]
     }
   ]

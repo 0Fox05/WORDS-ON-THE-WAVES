@@ -60,6 +60,7 @@ public class PlayerCartEntry
 {
     public string Name;
     public int Have;
+    public bool Active;
 }
 
 [Serializable]

@@ -105,7 +105,18 @@ public class DataManager : MonoBehaviour
     // --- MONEY ---
     public void ChangeMoney(int delta)
     {
-        int boostedDelta = Mathf.RoundToInt(delta * moneyBoostMultiplier);
+        int boostedDelta;
+
+        // Apply buff only if the game is in Service state
+        if (GameManager.Instance.CurrentState == GameManager.GameState.Service)
+        {
+            boostedDelta = Mathf.RoundToInt(delta * moneyBoostMultiplier);
+        }
+        else
+        {
+            boostedDelta = delta;
+        }
+
         PlayerData.Money += boostedDelta;
         if (PlayerData.Money < 0) PlayerData.Money = 0;
 
@@ -222,6 +233,22 @@ public class DataManager : MonoBehaviour
         {
             Debug.Log("Not enough money to buy " + itemName);
             return false;
+        }
+    }
+    // --- ACTIVE STATE ---
+    public void ChangeActive(string itemName, bool active)
+    {
+        var entry = PlayerData.ItemsCart.Find(i => i.Name == itemName);
+        if (entry != null)
+        {
+            // Only allow active if the player owns it
+            entry.Active = (entry.Have > 0) && active;
+            SavePlayer();
+            Debug.Log($"Item {itemName} active state set to {entry.Active}");
+        }
+        else
+        {
+            Debug.LogWarning($"Item {itemName} not found in PlayerData.ItemsCart");
         }
     }
 

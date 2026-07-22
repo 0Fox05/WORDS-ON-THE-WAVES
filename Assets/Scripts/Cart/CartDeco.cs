@@ -57,9 +57,9 @@ public class CartDeco : MonoBehaviour
                 }
             }
         }
-
         UpdateSpriteHaveUI();
         UpdateBoostedSpriteUI();
+        RefreshItems();
     }
 
     public void UpdateItems()
@@ -128,21 +128,29 @@ public class CartDeco : MonoBehaviour
                 texts[i].text = string.Empty;
         }
 
-        // Show boosts and their percentages
+        // Calculate total boost per category
+        Dictionary<BookCategory, float> totalBoosts = new Dictionary<BookCategory, float>();
+        foreach (var item in items)
+        {
+            if (item.isActive && GetPlayerItemCount(item.name) > 0)
+            {
+                foreach (var boost in item.bookBoosts)
+                {
+                    if (!totalBoosts.ContainsKey(boost.category))
+                        totalBoosts[boost.category] = 0f;
+                    totalBoosts[boost.category] += boost.percent;
+                }
+            }
+        }
+
+        // Display total boosts
         for (int i = 0; i < BoostedSprites.Count; i++)
         {
             BookCategory cat = (BookCategory)i;
-            float multiplier = BookCalculate.Instance.GetMultiplier(cat);
-
-            if (multiplier > 1f && i < BoostedSpriteHave.Count)
+            if (totalBoosts.TryGetValue(cat, out float totalPercent) && totalPercent > 0f)
             {
                 BoostedSpriteHave[i].sprite = BoostedSprites[i];
-
-                if (i < texts.Count && texts[i] != null)
-                {
-                    float boostPercent = (multiplier - 1f) * 100f;
-                    texts[i].text = $"+{boostPercent:F0}%";
-                }
+                texts[i].text = $"+{totalPercent:F0}%";
             }
         }
     }
@@ -176,6 +184,9 @@ public class CartDeco : MonoBehaviour
     {
         item.isActive = !item.isActive;
 
+        // Use DataManager to persist the change
+        DataManager.Instance.ChangeActive(item.name, item.isActive);
+
         if (item.isActive)
         {
             ApplyOriginal(item);
@@ -189,6 +200,18 @@ public class CartDeco : MonoBehaviour
 
         UpdateSpriteHaveUI();
         UpdateBoostedSpriteUI();
+    }
+
+    private int GetPlayerItemCount(string itemName)
+    {
+        var entry = DataManager.Instance.PlayerData.ItemsCart.Find(i => i.Name == itemName);
+        if (entry != null)
+        {
+            // If Have = 0, force Active = false
+            if (entry.Have <= 0) entry.Active = false;
+            return entry.Have;
+        }
+        return 0;
     }
 
     private void ApplyOriginal(DecoItem item)
@@ -212,16 +235,6 @@ public class CartDeco : MonoBehaviour
                 item.renderers[i].materials = shadowArray;
             }
         }
-    }
-
-    private int GetPlayerItemCount(string itemName)
-    {
-        if (DataManager.Instance != null && DataManager.Instance.PlayerData != null)
-        {
-            var entry = DataManager.Instance.PlayerData.ItemsCart.Find(i => i.Name == itemName);
-            if (entry != null) return entry.Have;
-        }
-        return 0;
     }
 
     private void InactivateGhostItems()
@@ -292,39 +305,36 @@ public class CartDeco : MonoBehaviour
     }
     public void RefreshItems()
     {
-        // ✅ Reset money boost multiplier before scanning
         DataManager.Instance.ResetMoneyBoosts();
 
         foreach (var item in items)
         {
-            int haveCount = GetPlayerItemCount(item.name);
+            var entry = DataManager.Instance.PlayerData.ItemsCart.Find(i => i.Name == item.name);
+            int haveCount = entry != null ? entry.Have : 0;
+            bool isActive = entry != null && entry.Active;
+
+            // Sync with saved data
+            item.isActive = isActive;
 
             if (haveCount <= 0)
             {
                 item.isActive = false;
                 ApplyShadow(item);
-                // no boost
             }
             else if (!item.isActive)
             {
                 ApplyShadow(item);
-                // no boost
             }
             else
             {
                 ApplyOriginal(item);
 
-                // ✅ Apply book boosts directly
+                // ✅ Apply buffs only if PlayerData says Active
                 foreach (var boost in item.bookBoosts)
-                {
                     BookCalculate.Instance.BoostThis(boost.category, boost.percent);
-                }
 
-                // ✅ Apply money boost directly
                 if (item.moneyBoostPercent > 0f)
-                {
                     DataManager.Instance.ApplyMoneyBoost(item.moneyBoostPercent);
-                }
             }
         }
 
