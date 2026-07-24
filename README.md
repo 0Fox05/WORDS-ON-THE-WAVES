@@ -8,4 +8,13 @@ WORDS ON THE WAVES where you are a bookseller, your work is to manage book and s
 ## System Flow Diagram
 ![SFD](Docs/BookManage.jpeg)
 ## Gameplay
+## Gameplay Screenshots
+![Home](Docs/Home.png)
+![Menu](Docs/Menu.png)
+![Bookshelf](Docs/BookShelf.png)
+![Deco](Docs/Deco.png)
+![Gameplay](Docs/Gameplay.png)
+
+
+
 
