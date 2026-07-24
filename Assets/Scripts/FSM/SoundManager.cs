@@ -32,7 +32,6 @@ public class SoundManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Persist across scenes
         }
         else
         {

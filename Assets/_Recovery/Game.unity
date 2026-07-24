@@ -4475,6 +4475,7 @@ GameObject:
   m_Component:
   - component: {fileID: 350714813}
   - component: {fileID: 350714814}
+  - component: {fileID: 350714815}
   m_Layer: 0
   m_Name: SoundManager
   m_TagString: Untagged
@@ -4527,6 +4528,18 @@ MonoBehaviour:
   comboSFX: {fileID: 8300000, guid: ebcda11bc28a3404fb1d98046b9b1e56, type: 3}
   musicSlider: {fileID: 1296221036}
   sfxSlider: {fileID: 1747192249}
+--- !u!114 &350714815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350714812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 644051d1d548689409b8c9421fd7ed0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DontDestroyCode
 --- !u!1 &353592175
 GameObject:
   m_ObjectHideFlags: 0
@@ -7524,7 +7537,7 @@ RectTransform:
   m_Father: {fileID: 619088012}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: -4.5587, y: -0}
   m_SizeDelta: {x: 11.4746, y: -0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -7948,7 +7961,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &684598794
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8414,7 +8427,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &711083162
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12361,7 +12374,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &958431399
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12904,7 +12917,7 @@ RectTransform:
   m_Father: {fileID: 2012655357}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -12979,7 +12992,7 @@ RectTransform:
   m_Father: {fileID: 759421992}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -21210,13 +21223,14 @@ GameObject:
   - component: {fileID: 1589050525}
   - component: {fileID: 1589050527}
   - component: {fileID: 1589050526}
+  - component: {fileID: 1589050528}
   m_Layer: 5
   m_Name: Setting
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1589050525
 RectTransform:
   m_ObjectHideFlags: 0
@@ -21276,6 +21290,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1589050524}
   m_CullTransparentMesh: 1
+--- !u!114 &1589050528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1589050524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 644051d1d548689409b8c9421fd7ed0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DontDestroyCode
 --- !u!1 &1591057097
 GameObject:
   m_ObjectHideFlags: 0
@@ -21441,7 +21467,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1610449680
 RectTransform:
   m_ObjectHideFlags: 0
@@ -23589,7 +23615,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1759989582
 RectTransform:
   m_ObjectHideFlags: 0
@@ -27243,7 +27269,7 @@ RectTransform:
   m_Father: {fileID: 770954439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: -4.5587, y: -0}
   m_SizeDelta: {x: 11.4746, y: -0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -27697,7 +27723,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1987335335
 RectTransform:
   m_ObjectHideFlags: 0
