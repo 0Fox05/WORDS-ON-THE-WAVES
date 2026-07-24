@@ -1,9 +1,10 @@
-using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Drawing;
 using TMPro;
 using Unity.Cinemachine;
+using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
-using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -288,7 +289,7 @@ public class UIManager : MonoBehaviour
             int currentMoney = DataManager.Instance.GetMoney();
 
             // Special case: Central Square is always allowed if money == 0
-            if (location == "Central Square" && currentMoney == 0)
+            if (location == "Central Square" && currentMoney <= 6)
             {
                 ChosenLocation = location;
                 GameManager.Instance.ChangeState(GameManager.GameState.Preparation);
@@ -345,7 +346,7 @@ public class UIManager : MonoBehaviour
                     MapCanNot[i].SetActive(true);
             }
         }
-        Debug.LogWarning($"Map Scan Ran");
+        Debug.Log($"Map Scan Ran");
     }
     public void ShowPreparation()
     {
@@ -506,7 +507,19 @@ public class UIManager : MonoBehaviour
     }
     public void UpdatePlayerDataUI()
     {
+        if (DataManager.Instance == null || DataManager.Instance.PlayerData == null)
+        {
+            Debug.LogWarning("DataManager or PlayerData not ready — skipping UpdatePlayerDataUI.");
+            return;
+        }
+
         var playerData = DataManager.Instance.PlayerData;
+
+        if (playerData.Books == null || playerData.Books.Count == 0)
+        {
+            Debug.Log("PlayerData.Books is empty or null — skipping UI update.");
+            return;
+        }
 
         // Update book counts by category
         foreach (var entry in playerData.Books)
@@ -539,6 +552,7 @@ public class UIManager : MonoBehaviour
             }
         }
     }
+
     public void UpdateShopTexts(BookCategory category, int newValue)
     {
         switch (category)
@@ -639,5 +653,11 @@ public class UIManager : MonoBehaviour
     public void PlaySoundButton()
     {
         SoundManager.Instance.PlayButtonClick();
+    }
+    public Transform worldCanvas;
+    public void ShowTextCombo(int point)
+    {
+         FloatTextPool.Instance.SpawnText("Combo " + (point - 1), worldCanvas);
+        SoundManager.Instance.PlayCombo();
     }
 }

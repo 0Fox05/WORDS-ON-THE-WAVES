@@ -1,0 +1,20 @@
+{
+    "name": "Veridian.MaterialsCombinator.Demo.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7551c3fc692b6cd4dbc2225c597718bd",
+        "GUID:b161389f5a6d83f4d88d89d93f07170c",
+        "GUID:48012ac70d64c2746a2024d3ae61a6ec"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

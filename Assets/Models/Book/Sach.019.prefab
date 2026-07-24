@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6539435466815576765}
   - component: {fileID: 661330261406566874}
   - component: {fileID: 3542668267578594670}
+  - component: {fileID: 7218704899768532380}
   m_Layer: 0
   m_Name: Sach.019
   m_TagString: Untagged
@@ -66,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 4658465785290524863, guid: c9439ad6c9662984bb8a3e11814b9e4b, type: 3}
+  - {fileID: 2100000, guid: 591373ad83740804c919c20f8b920f3b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -90,3 +91,15 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7218704899768532380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 791371689580016893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db2ce846fec1e7940ad7cb765cf04cf5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BookLock

@@ -64,7 +64,7 @@ public class CartPlaceManage : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Place index out of range: " + index);
+            Debug.Log("Place index out of range: " + index);
         }
     }
 

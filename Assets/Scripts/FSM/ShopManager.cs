@@ -94,7 +94,6 @@ public class ShopManager : MonoBehaviour
             books[index].text = $"0";
         }
     }
-
     private string RollCategory(Crate crate)
     {
         float roll = Random.value;
@@ -109,4 +108,44 @@ public class ShopManager : MonoBehaviour
 
         return crate.DropRates[crate.DropRates.Count - 1].Category;
     }
+    public void StupidPlayer()
+    {
+        // Condition 1: money <= 20
+        if (DataManager.Instance.GetMoney() <= 20)
+        {
+            bool allZero = true;
+
+            // Condition 2: check if all categories have 0
+            foreach (BookCategory category in System.Enum.GetValues(typeof(BookCategory)))
+            {
+                var entry = DataManager.Instance.PlayerData.Books.Find(b => b.Category == category);
+                if (entry != null && entry.Have > 0)
+                {
+                    allZero = false;
+                    break;
+                }
+            }
+
+            // If both conditions are true
+            if (allZero)
+            {
+                foreach (BookCategory category in System.Enum.GetValues(typeof(BookCategory)))
+                {
+                    var entry = DataManager.Instance.PlayerData.Books.Find(b => b.Category == category);
+                    if (entry == null)
+                    {
+                        entry = new PlayerBookEntry { Category = category, Have = 0 };
+                        DataManager.Instance.PlayerData.Books.Add(entry);
+                    }
+
+                    DataManager.Instance.ChangeBookCount(category, 1);
+                }
+
+                DataManager.Instance.ChangeMoney(7);
+
+                Debug.Log("StupidPlayer triggered: +1 book in each category and +7 money");
+            }
+        }
+    }
+
 }

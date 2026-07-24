@@ -38,6 +38,10 @@ public class CartDeco : MonoBehaviour
     public List<Image> BoostedSpriteHave; // assign Image slots in Inspector, same order
     public List<TextMeshProUGUI> texts;   // assign in same order as BoostedSpriteHave
 
+    [Header("Default Boost Sprites")]
+    public List<Sprite> DefaultBoostedSprites; // assign in Inspector, same order as BoostedSprites
+
+
     public void Awake()
     {
         Instance = this;
@@ -97,10 +101,7 @@ public class CartDeco : MonoBehaviour
 
     private void UpdateSpriteHaveUI()
     {
-        foreach (var img in SpriteHave)
-        {
-            if (img != null) img.sprite = null;
-        }
+        // Do NOT clear slots anymore — keep whatever sprite was set in the Inspector
 
         int index = 0;
         foreach (var item in items)
@@ -109,22 +110,21 @@ public class CartDeco : MonoBehaviour
             {
                 if (index < SpriteHave.Count)
                 {
+                    // Overwrite only when player owns the item
                     SpriteHave[index].sprite = item.sprite;
                     index++;
                 }
             }
+            // If not owned → leave the slot’s original sprite untouched
         }
     }
 
     private void UpdateBoostedSpriteUI()
     {
-        // Clear all boosted slots and texts first
-        for (int i = 0; i < BoostedSpriteHave.Count; i++)
+        // Clear texts but keep sprites
+        for (int i = 0; i < texts.Count; i++)
         {
-            if (BoostedSpriteHave[i] != null)
-                BoostedSpriteHave[i].sprite = null;
-
-            if (i < texts.Count && texts[i] != null)
+            if (texts[i] != null)
                 texts[i].text = string.Empty;
         }
 
@@ -143,17 +143,28 @@ public class CartDeco : MonoBehaviour
             }
         }
 
-        // Display total boosts
+        // Display boosts or restore defaults
         for (int i = 0; i < BoostedSprites.Count; i++)
         {
             BookCategory cat = (BookCategory)i;
             if (totalBoosts.TryGetValue(cat, out float totalPercent) && totalPercent > 0f)
             {
-                BoostedSpriteHave[i].sprite = BoostedSprites[i];
-                texts[i].text = $"+{totalPercent:F0}%";
+                // Show boosted sprite + text
+                if (BoostedSpriteHave[i] != null)
+                    BoostedSpriteHave[i].sprite = BoostedSprites[i];
+
+                if (i < texts.Count && texts[i] != null)
+                    texts[i].text = $"+{totalPercent:F0}%";
+            }
+            else
+            {
+                // No boost → restore default sprite
+                if (BoostedSpriteHave[i] != null && i < DefaultBoostedSprites.Count)
+                    BoostedSpriteHave[i].sprite = DefaultBoostedSprites[i];
             }
         }
     }
+
 
     private void Update()
     {
@@ -204,15 +215,23 @@ public class CartDeco : MonoBehaviour
 
     private int GetPlayerItemCount(string itemName)
     {
-        var entry = DataManager.Instance.PlayerData.ItemsCart.Find(i => i.Name == itemName);
+        if (DataManager.Instance == null || DataManager.Instance.PlayerData == null)
+            return 0; // skip if DataManager or PlayerData not ready
+
+        var entry = DataManager.Instance.PlayerData.ItemsCart
+            ?.Find(i => i.Name == itemName);
+
         if (entry != null)
         {
             // If Have = 0, force Active = false
             if (entry.Have <= 0) entry.Active = false;
             return entry.Have;
         }
+
+        // No entry found → treat as 0
         return 0;
     }
+
 
     private void ApplyOriginal(DecoItem item)
     {
@@ -305,15 +324,22 @@ public class CartDeco : MonoBehaviour
     }
     public void RefreshItems()
     {
+        if (DataManager.Instance == null || DataManager.Instance.PlayerData == null)
+        {
+            Debug.LogWarning("DataManager or PlayerData not ready yet — skipping RefreshItems.");
+            return;
+        }
+
         DataManager.Instance.ResetMoneyBoosts();
 
         foreach (var item in items)
         {
-            var entry = DataManager.Instance.PlayerData.ItemsCart.Find(i => i.Name == item.name);
+            var entry = DataManager.Instance.PlayerData.ItemsCart
+                ?.Find(i => i.Name == item.name);
+
             int haveCount = entry != null ? entry.Have : 0;
             bool isActive = entry != null && entry.Active;
 
-            // Sync with saved data
             item.isActive = isActive;
 
             if (haveCount <= 0)
@@ -329,7 +355,6 @@ public class CartDeco : MonoBehaviour
             {
                 ApplyOriginal(item);
 
-                // ✅ Apply buffs only if PlayerData says Active
                 foreach (var boost in item.bookBoosts)
                     BookCalculate.Instance.BoostThis(boost.category, boost.percent);
 
@@ -338,13 +363,7 @@ public class CartDeco : MonoBehaviour
             }
         }
 
-        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameManager.GameState.Service)
-            InactivateGhostItems();
-        else
-            ReactivateGhostItems();
-
         UpdateSpriteHaveUI();
         UpdateBoostedSpriteUI();
     }
-
 }

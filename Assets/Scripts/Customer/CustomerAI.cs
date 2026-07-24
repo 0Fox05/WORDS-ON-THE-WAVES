@@ -35,11 +35,10 @@ public class CustomerAI : MonoBehaviour
     private BookCategory correctCategory;
     private List<string> currentDialogueLines;
     private Dictionary<BookCategory, Sprite> spriteMap;
-    private DialogueEntry currentEntry;   // ✅ holds the active dialogue entry
+    private DialogueEntry currentEntry;
 
-
-    // Route flag
     private bool useDialogueRoute;
+    private GameObject originPrefab; // ✅ prefab gốc để trả về pool
 
     void Awake()
     {
@@ -74,17 +73,32 @@ public class CustomerAI : MonoBehaviour
     }
 
     public void Initialize(Transform spawn, Transform cart, List<TextMeshProUGUI> textList,
-                       Dictionary<BookCategory, Sprite> spriteDictionary, CustomerSpawner spawnerRef)
+                           Dictionary<BookCategory, Sprite> spriteDictionary, CustomerSpawner spawnerRef,
+                           GameObject prefabRef)
     {
         spawnLocation = spawn;
         cartLocation = cart;
         texts = textList;
         spawner = spawnerRef;
         spriteMap = spriteDictionary;
+        originPrefab = prefabRef; // ✅ lưu prefab gốc
 
         float chance = UnityEngine.Random.value;
         useDialogueRoute = (chance <= 0.7f);
+
+        // reset trạng thái mỗi lần tái sử dụng
+        isProcessing = false;
+        goingToCart = true;
+        questionsAsked = 0;
+        currentEntry = null;
+
+        if (agent != null && cartLocation != null)
+        {
+            agent.isStopped = false;
+            agent.SetDestination(cartLocation.position);
+        }
     }
+
     void Update()
     {
         if (agent == null || !agent.isOnNavMesh) return;
@@ -96,7 +110,6 @@ public class CustomerAI : MonoBehaviour
                 if (goingToCart)
                 {
                     isProcessing = true;
-
                     if (useDialogueRoute)
                         StartCoroutine(WaitForTurn());
                     else
@@ -104,7 +117,9 @@ public class CustomerAI : MonoBehaviour
                 }
                 else
                 {
-                    Destroy(gameObject);
+                    // ❌ Destroy(gameObject);
+                    // ✅ trả về pool
+                    ResetAndReturnToPool();
                 }
             }
         }
@@ -112,14 +127,12 @@ public class CustomerAI : MonoBehaviour
 
     IEnumerator WaitForTurn()
     {
-        // No lock → just ask question immediately
         AskQuestion();
         yield break;
     }
 
     void AskQuestion()
     {
-        // No spawner.activeCustomer check
         if (currentEntry == null)
         {
             var validEntries = dialogueData.Question.Where(entry =>
@@ -136,7 +149,6 @@ public class CustomerAI : MonoBehaviour
 
             if (validEntries.Count == 0)
             {
-                // ✅ Fallback to instant purchase if no valid dialogue
                 StartCoroutine(InstantPurchaseRoutine());
                 return;
             }
@@ -151,41 +163,18 @@ public class CustomerAI : MonoBehaviour
         agent.isStopped = true;
     }
 
-    void OnBookChosenDialogue(BookCategory chosenCategory)
+    public void OnAnswer(bool playerChoiceCorrect)
     {
-        HandleBookPurchase(chosenCategory);
-
-        if (chosenCategory == correctCategory)
-            DataManager.Instance.ChangeMoney(10);
-        else
-            DataManager.Instance.ChangeMoney(5);
-
-        // Extra book
-        BookCategory extra = BookCalculate.Instance.GetWeightedRandomCategory();
-        int idx = (int)extra;
-        if (idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0)
-        {
-            HandleBookPurchase(extra);
-            DataManager.Instance.ChangeMoney(5);
-        }
-
-        BookCalculate.Instance.UpdateUI();
-        bookSelectionPanel.SetActive(false);
+        Debug.Log($"+{correctCategory}%");
+        questionsAsked++;
         questionPanel.SetActive(false);
 
-        foreach (var btn in bookButtons)
-        {
-            btn.onClick.RemoveAllListeners();
-            btn.gameObject.SetActive(false);
-        }
-
-        agent.isStopped = false;
-        agent.SetDestination(spawnLocation.position);
-        goingToCart = false;
-        isProcessing = false;
-        GameManager.Instance.ResetPoint();
-        currentEntry = null;
+        if (questionsAsked < currentDialogueLines.Count)
+            AskQuestion();
+        else
+            ShowBookSelection();
     }
+
     void ShowBookSelection()
     {
         if (bookSelectionPanel == null) return;
@@ -211,7 +200,7 @@ public class CustomerAI : MonoBehaviour
                 BookCategory cat = choices[i];
 
                 bookButtons[i].gameObject.SetActive(true);
-                bookButtons[i].image.sprite = spriteMap[cat]; // ✅ use dictionary
+                bookButtons[i].image.sprite = spriteMap[cat];
                 bookButtons[i].onClick.RemoveAllListeners();
                 bookButtons[i].onClick.AddListener(() => OnBookChosenDialogue(cat));
             }
@@ -220,6 +209,46 @@ public class CustomerAI : MonoBehaviour
                 bookButtons[i].gameObject.SetActive(false);
             }
         }
+    }
+
+    void OnBookChosenDialogue(BookCategory chosenCategory)
+    {
+        HandleBookPurchase(chosenCategory);
+
+        if (chosenCategory == correctCategory)
+        {
+            DataManager.Instance.ChangeMoney(10);
+            GameManager.Instance.IncreasePoint();
+        }
+        else
+        {
+            DataManager.Instance.ChangeMoney(5);
+            GameManager.Instance.ResetPoint();
+        }
+
+        BookCategory extra = BookCalculate.Instance.GetWeightedRandomCategory();
+        int idx = (int)extra;
+        if (idx < texts.Count && int.TryParse(texts[idx].text, out int val) && val > 0)
+        {
+            HandleBookPurchase(extra);
+            DataManager.Instance.ChangeMoney(5);
+        }
+
+        BookCalculate.Instance.UpdateUI();
+        bookSelectionPanel.SetActive(false);
+        questionPanel.SetActive(false);
+
+        foreach (var btn in bookButtons)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.gameObject.SetActive(false);
+        }
+
+        agent.isStopped = false;
+        agent.SetDestination(spawnLocation.position);
+        goingToCart = false;
+        isProcessing = false;
+        currentEntry = null;
     }
 
     void OnBookChosenInstant(BookCategory chosenCategory)
@@ -239,26 +268,11 @@ public class CustomerAI : MonoBehaviour
         DataManager.Instance.ChangeBookCount(chosenCategory, -1);
     }
 
-    public void OnAnswer(bool playerChoiceCorrect)
-    {
-        Debug.Log($"+{correctCategory}%");
-        if (playerChoiceCorrect)
-            GameManager.Instance.IncreasePoint();
-
-        questionsAsked++;
-        questionPanel.SetActive(false);
-
-        if (questionsAsked < currentDialogueLines.Count)
-            AskQuestion();
-        else
-            ShowBookSelection();
-    }
-
     IEnumerator InstantPurchaseRoutine()
     {
         yield return new WaitForSeconds(5f);
 
-        int booksToBuy = UnityEngine.Random.Range(1, 3); // 1 or 2
+        int booksToBuy = UnityEngine.Random.Range(1, 3);
         for (int i = 0; i < booksToBuy; i++)
         {
             BookCategory chosen = BookCalculate.Instance.GetWeightedRandomCategory();
@@ -275,6 +289,27 @@ public class CustomerAI : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(spawnLocation.position);
         goingToCart = false;
-        isProcessing = false; // reset
+        isProcessing = false;
+    }
+
+    void ResetAndReturnToPool()
+    {
+        if (questionPanel != null) questionPanel.SetActive(false);
+        if (bookSelectionPanel != null) bookSelectionPanel.SetActive(false);
+
+        foreach (var btn in bookButtons)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.gameObject.SetActive(false);
+        }
+
+        isProcessing = false;
+        goingToCart = true;
+        currentEntry = null;
+        questionsAsked = 0;
+
+        if (agent != null) agent.isStopped = true;
+
+        spawner.ReturnToPool(originPrefab, this.gameObject); // ✅ trả về pool
     }
 }

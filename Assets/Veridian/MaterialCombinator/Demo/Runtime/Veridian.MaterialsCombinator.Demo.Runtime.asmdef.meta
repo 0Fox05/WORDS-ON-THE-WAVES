@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7551c3fc692b6cd4dbc2225c597718bd
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 380954
+  packageName: 'Materials Combinator: Texture Atlas & Draw Call Optimizer'
+  packageVersion: 1.0
+  assetPath: Assets/Veridian/MaterialCombinator/Demo/Runtime/Veridian.MaterialsCombinator.Demo.Runtime.asmdef
+  uploadId: 918960

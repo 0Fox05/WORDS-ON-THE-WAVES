@@ -8,10 +8,17 @@ public class BookShelf : MonoBehaviour
 {
     public Button[] buttons;
     public List<TextMeshProUGUI> texts;
-    public List<GameObject> prefabs;
     public List<TextMeshProUGUI> inShoptexts;
 
-    private int selectedCategoryIndex = -1; // which button is currently selected
+    // Each category has its own prefab list
+    [System.Serializable]
+    public class CategoryPrefabs
+    {
+        public List<GameObject> prefabs;
+    }
+    public List<CategoryPrefabs> categoryPrefabs;
+
+    private int selectedCategoryIndex = -1;
     private enum HoldMode { None, Place, Remove }
     private HoldMode currentHoldMode = HoldMode.None;
 
@@ -29,8 +36,7 @@ public class BookShelf : MonoBehaviour
             buttons[i].onClick.AddListener(() => OnCategorySelected(index));
         }
 
-        // Default to Crime
-        selectedCategoryIndex = 0;
+        selectedCategoryIndex = 0; // Default to Crime
         Debug.Log("Default category set to Crime.");
     }
 
@@ -42,20 +48,18 @@ public class BookShelf : MonoBehaviour
 
     void Update()
     {
-        // Reset hold mode when mouse released
-            if (Input.GetMouseButtonUp(0))
-            {
-                currentHoldMode = HoldMode.None;
-            }
-
-            if (Input.GetMouseButtonDown(0))
-            {
-                HandleShelfInteraction(true);
-            }
-            else if (Input.GetMouseButton(0)) // use else-if
-            {
-                HandleShelfInteraction(false);
-            }
+        if (Input.GetMouseButtonUp(0))
+        {
+            currentHoldMode = HoldMode.None;
+        }
+        if (Input.GetMouseButtonDown(0))
+        {
+            HandleShelfInteraction(true);
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            HandleShelfInteraction(false);
+        }
     }
 
     private void HandleShelfInteraction(bool decideMode)
@@ -69,7 +73,6 @@ public class BookShelf : MonoBehaviour
             {
                 Transform shelf = hit.collider.transform;
 
-                // Look for a child tagged "Book"
                 GameObject existingBook = null;
                 foreach (Transform child in shelf)
                 {
@@ -80,7 +83,13 @@ public class BookShelf : MonoBehaviour
                     }
                 }
 
-                // Decide mode if this is the first click/hold
+                if (existingBook != null)
+                {
+                    BookLock lockComp = existingBook.GetComponent<BookLock>();
+                    if (lockComp != null && lockComp.IsProcessing)
+                        return;
+                }
+
                 if (decideMode && currentHoldMode == HoldMode.None)
                 {
                     currentHoldMode = (existingBook != null) ? HoldMode.Remove : HoldMode.Place;
@@ -90,7 +99,6 @@ public class BookShelf : MonoBehaviour
                 {
                     StartCoroutine(SlideOutAndDestroy(existingBook.transform));
                 }
-
                 else if (currentHoldMode == HoldMode.Place && existingBook == null)
                 {
                     PlaceBook(shelf);
@@ -102,6 +110,9 @@ public class BookShelf : MonoBehaviour
     private IEnumerator SlideOutAndDestroy(Transform book)
     {
         if (book == null) yield break;
+
+        BookLock lockComp = book.GetComponent<BookLock>();
+        if (lockComp != null) lockComp.Lock();
 
         float t = 0f;
         float duration = 0.3f;
@@ -118,37 +129,70 @@ public class BookShelf : MonoBehaviour
 
         if (book != null)
         {
-            // ✅ Determine category by color
-            Renderer rend = book.GetComponent<Renderer>();
-            if (rend != null)
+            // Get category from BookCategoryForInshop component
+            BookCategoryForInshop cat = book.GetComponent<BookCategoryForInshop>();
+            if (cat != null)
             {
-                Color c = rend.material.color;
-                int categoryIndex = -1;
+                int categoryIndex = cat.categoryIndex;
 
-                if (c == Color.red) categoryIndex = 0;       // Crime
-                else if (c == Color.green) categoryIndex = 1; // Drama
-                else if (c == Color.gray) categoryIndex = 2;  // Fact
-                else if (c == Color.magenta) categoryIndex = 3; // Fantasy
-                else if (c == Color.yellow) categoryIndex = 4;  // Classic
-                else if (c == new Color(1f, 0.204f, 0.584f)) categoryIndex = 5; // Kids
-                else if (c == Color.blue) categoryIndex = 6;  // Travel
+                int shopValue;
+                if (int.TryParse(inShoptexts[categoryIndex].text, out shopValue))
+                    inShoptexts[categoryIndex].text = (shopValue - 1).ToString();
 
-                if (categoryIndex >= 0)
-                {
-                    // Mirror place logic: decrease shop, increase stock
-                    int shopValue;
-                    if (int.TryParse(inShoptexts[categoryIndex].text, out shopValue))
-                        inShoptexts[categoryIndex].text = (shopValue - 1).ToString();
-
-                    int currentValue;
-                    if (int.TryParse(texts[categoryIndex].text, out currentValue))
-                        texts[categoryIndex].text = (currentValue + 1).ToString();
-                }
+                int currentValue;
+                if (int.TryParse(texts[categoryIndex].text, out currentValue))
+                    texts[categoryIndex].text = (currentValue + 1).ToString();
             }
 
             Destroy(book.gameObject);
             SoundManager.Instance.PlayBookPlaced();
             Debug.Log("Removed book.");
+        }
+    }
+
+    private void PlaceBook(Transform shelf)
+    {
+        if (selectedCategoryIndex >= 0 && categoryPrefabs.Count > selectedCategoryIndex)
+        {
+            int currentValue;
+            if (int.TryParse(texts[selectedCategoryIndex].text, out currentValue) && currentValue > 0)
+            {
+                texts[selectedCategoryIndex].text = (currentValue - 1).ToString();
+
+                // Random prefab from the selected category
+                var prefabs = categoryPrefabs[selectedCategoryIndex].prefabs;
+                int randomIndex = Random.Range(0, prefabs.Count);
+
+                Vector3 snapPos = shelf.position;
+                snapPos.y += -0.2f;
+                Vector3 startPos = snapPos + shelf.forward * 0.5f;
+
+                GameObject newBook = Instantiate(
+                    prefabs[randomIndex],
+                    startPos,
+                    Quaternion.Euler(-90f, 180f, 0f)
+                );
+
+                newBook.transform.SetParent(shelf);
+                newBook.tag = "Book";
+
+                // Add lock
+                BookLock lockComp = newBook.AddComponent<BookLock>();
+                lockComp.Lock();
+
+                // Add category info
+                BookCategoryForInshop cat = newBook.AddComponent<BookCategoryForInshop>();
+                cat.categoryIndex = selectedCategoryIndex;
+
+                StartCoroutine(SlideInAndUnlock(newBook.transform, snapPos, lockComp));
+
+                int shopValue;
+                if (int.TryParse(inShoptexts[selectedCategoryIndex].text, out shopValue))
+                    inShoptexts[selectedCategoryIndex].text = (shopValue + 1).ToString();
+
+                SoundManager.Instance.PlayBookPlaced();
+                Debug.Log("Placed book.");
+            }
         }
     }
 
@@ -167,58 +211,16 @@ public class BookShelf : MonoBehaviour
 
         book.position = targetPos;
     }
-    private void PlaceBook(Transform shelf)
+
+    private IEnumerator SlideInAndUnlock(Transform book, Vector3 targetPos, BookLock lockComp)
     {
-        if (selectedCategoryIndex >= 0 && prefabs.Count > 0)
-        {
-            int currentValue;
-            if (int.TryParse(texts[selectedCategoryIndex].text, out currentValue) && currentValue > 0)
-            {
-                int randomIndex = Random.Range(0, prefabs.Count);
-
-                Vector3 snapPos = shelf.position;
-                snapPos.y += -0.2f;
-
-                // Start slightly forward on Z
-                Vector3 startPos = snapPos + shelf.forward * 0.5f;
-
-                GameObject newBook = Instantiate(
-                    prefabs[randomIndex],
-                    startPos,
-                    Quaternion.Euler(-90f, 180f, 0f)
-                );
-
-                newBook.transform.SetParent(shelf);
-                newBook.tag = "Book";
-
-                // Animate slide in
-                StartCoroutine(SlideIn(newBook.transform, snapPos));
-
-                // Apply category color
-                Color bookColor = Color.white;
-                switch (selectedCategoryIndex)
-                {
-                    case 0: bookColor = Color.red; break;
-                    case 1: bookColor = Color.green; break;
-                    case 2: bookColor = Color.gray; break;
-                    case 3: bookColor = Color.magenta; break;
-                    case 4: bookColor = Color.yellow; break;
-                    case 5: bookColor = new Color(1f, 0.204f, 0.584f); break; // Kids
-                    case 6: bookColor = Color.blue; break;
-                }
-
-                Renderer rend = newBook.GetComponent<Renderer>();
-                if (rend != null) rend.material.color = bookColor;
-
-                texts[selectedCategoryIndex].text = (currentValue - 1).ToString();
-
-                int shopValue;
-                if (int.TryParse(inShoptexts[selectedCategoryIndex].text, out shopValue))
-                    inShoptexts[selectedCategoryIndex].text = (shopValue + 1).ToString();
-
-                SoundManager.Instance.PlayBookPlaced();
-                Debug.Log("Placed book.");
-            }
-        }
+        yield return SlideIn(book, targetPos);
+        if (lockComp != null) lockComp.Unlock();
     }
+}
+
+// Helper component to store category info for in-shop tracking
+public class BookCategoryForInshop : MonoBehaviour
+{
+    public int categoryIndex;
 }

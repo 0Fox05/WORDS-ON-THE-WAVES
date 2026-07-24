@@ -35,11 +35,20 @@ public class DataManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        LoadLocations("JsonData/locations");
-        LoadCrates("JsonData/crates");
-        LoadPlayer("JsonData/PlayerData");
+
+        LoadLocations("JsonData/Locations");
+        LoadCrates("JsonData/Crates");
+
+        string playerPath = Path.Combine(Application.persistentDataPath, "player.json");
+        if (!File.Exists(playerPath))
+        {
+            ResetPlayer(); // copies defaults from Resources/JsonData/PlayerData
+        }
+        LoadPlayer("player.json");
+
         LoadShop("JsonData/Items");
     }
+
 
     // --- LOCATION ---
     void LoadLocations(string resourcePath)
@@ -97,7 +106,7 @@ public class DataManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("No player data file found, using defaults.");
+            Debug.Log("No player data file found, using defaults.");
             PlayerData = new PlayerData();
         }
     }

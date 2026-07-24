@@ -1,0 +1,18 @@
+{
+    "name": "Veridian.Perspective.MaterialCombinator.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:b161389f5a6d83f4d88d89d93f07170c"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

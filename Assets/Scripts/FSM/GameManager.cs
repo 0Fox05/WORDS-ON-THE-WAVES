@@ -22,11 +22,35 @@ public class GameManager : MonoBehaviour
     {
         point += 1;
         Debug.Log("Point increased by 1");
+        CheckPoints();
     }
     public void ResetPoint()
     {
         point = 0;
     }
+    public void CheckPoints()
+    {
+        if (point > 1)
+        {
+            // Do something here
+            Debug.Log("Player has more than 1 point!");
+
+            UIManager.Instance.ShowTextCombo(point);
+        }
+        else
+        {
+            if (point == 1)
+            {
+                Debug.Log("Player + 1 point!");
+            }
+            else
+            {
+                ResetPoint();
+                Debug.Log("Player has 0 point.");
+            }
+        }
+    }
+
     public enum GameState
     {
         Home,
@@ -51,6 +75,7 @@ public class GameManager : MonoBehaviour
                 ClearAllShelves();
                 UIManager.Instance.UpdatePlayerDataUI();
                 SoundManager.Instance.MuteLocationMusic(true);
+                ShopManager.Instance.StupidPlayer();
                 break;
             case GameState.Cargo:
                 UIManager.Instance.ShowDecor();
@@ -148,8 +173,8 @@ public class GameManager : MonoBehaviour
     {
         if (scene.name == "Game")
         {
-            ChangeState(GameState.Menu);
             SceneManager.sceneLoaded -= OnSceneLoaded; // unsubscribe so it only runs once
+            ResetPoint();
         }
     }
 }

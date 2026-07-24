@@ -1,7 +1,8 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 
 public class CustomerSpawner : MonoBehaviour
@@ -23,6 +24,9 @@ public class CustomerSpawner : MonoBehaviour
     private Coroutine spawnRoutine;
     private Dictionary<BookCategory, Sprite> spriteMap;
 
+    // ✅ Pool dictionary
+    private Dictionary<GameObject, Queue<GameObject>> pools = new Dictionary<GameObject, Queue<GameObject>>();
+
     void Awake()
     {
         spriteMap = new Dictionary<BookCategory, Sprite>
@@ -35,6 +39,37 @@ public class CustomerSpawner : MonoBehaviour
             { BookCategory.Kids,    bookSprites[5] },
             { BookCategory.Travel,  bookSprites[6] }
         };
+
+        foreach (var prefab in customerPrefabs)
+        {
+            if (prefab == null)
+            {
+                Debug.LogWarning("CustomerSpawner: Found a null prefab in customerPrefabs list — skipping.");
+                continue;
+            }
+
+            pools[prefab] = new Queue<GameObject>();
+
+            for (int i = 0; i < 5; i++) // preload 5 NPCs each
+            {
+                // pick a point near your spawnPoint
+                Vector3 randomOffset = new Vector3(Random.Range(-2f, 2f), 0, Random.Range(-2f, 2f));
+                Vector3 candidatePos = spawnPoint.position + randomOffset;
+
+                // snap to nearest NavMesh position
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(candidatePos, out hit, 5f, NavMesh.AllAreas))
+                {
+                    GameObject npc = Instantiate(prefab, hit.position, Quaternion.identity);
+                    npc.SetActive(false);
+                    pools[prefab].Enqueue(npc);
+                }
+                else
+                {
+                    Debug.LogWarning($"CustomerSpawner: Could not find NavMesh near {candidatePos}, skipping preload.");
+                }
+            }
+        }
     }
 
     void Update()
@@ -68,20 +103,54 @@ public class CustomerSpawner : MonoBehaviour
         if (customerPrefabs == null || customerPrefabs.Count == 0) return;
 
         GameObject prefab = customerPrefabs[Random.Range(0, customerPrefabs.Count)];
-        GameObject npc = Instantiate(prefab, spawnPoint.position, Quaternion.identity);
+        GameObject npc = GetFromPool(prefab);
 
-        CustomerAI ai = npc.GetComponent<CustomerAI>();
-        if (ai == null)
-            ai = npc.AddComponent<CustomerAI>();
+        npc.transform.position = spawnPoint.position;
+        npc.transform.rotation = Quaternion.identity;
+        npc.SetActive(true);
 
-        ai.Initialize(spawnPoint, bookCartArea, texts, spriteMap, this);
+        CustomerAI ai = npc.GetComponent<CustomerAI>() ?? npc.AddComponent<CustomerAI>();
+        ai.Initialize(spawnPoint, bookCartArea, texts, spriteMap, this, prefab);
 
-        // ✅ Give each customer a unique offset near the cart
         Vector3 offset = new Vector3(Random.Range(-1.5f, 1.5f), 0, Random.Range(-1.5f, 1.5f));
-        UnityEngine.AI.NavMeshAgent agent = npc.GetComponent<UnityEngine.AI.NavMeshAgent>();
+        NavMeshAgent agent = npc.GetComponent<NavMeshAgent>();
+
         if (agent != null)
         {
-            agent.SetDestination(bookCartArea.position + offset);
+            // ✅ Only set destination if position is on NavMesh
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(npc.transform.position, out hit, 1.0f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position); // snap to valid NavMesh position
+                agent.SetDestination(bookCartArea.position + offset);
+            }
+            else
+            {
+                // Optional: silently skip or log once in editor only
+#if UNITY_EDITOR
+                Debug.Log($"Skipped NavMeshAgent creation for {npc.name} (not near NavMesh)");
+#endif
+            }
         }
+    }
+
+    GameObject GetFromPool(GameObject prefab)
+    {
+        if (pools[prefab].Count > 0)
+        {
+            return pools[prefab].Dequeue();
+        }
+        else
+        {
+            GameObject npc = Instantiate(prefab);
+            npc.SetActive(false);
+            return npc;
+        }
+    }
+
+    public void ReturnToPool(GameObject prefab, GameObject npc)
+    {
+        npc.SetActive(false);
+        pools[prefab].Enqueue(npc);
     }
 }

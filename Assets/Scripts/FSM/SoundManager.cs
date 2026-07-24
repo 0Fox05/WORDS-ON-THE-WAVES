@@ -20,6 +20,8 @@ public class SoundManager : MonoBehaviour
     public AudioSource musicSource;        // Default background music
     public AudioSource sfxSource;          // Sound effects
     public AudioSource locationMusicSource; // 🎵 New source for location themes
+    [Header("Combo SFX")]
+    public AudioClip comboSFX;
 
     [Header("UI Sliders")]
     public Slider musicSlider;
@@ -184,4 +186,13 @@ public class SoundManager : MonoBehaviour
             Debug.LogWarning("Invalid location audio index!");
         }
     }
+    public void PlayCombo()
+    {
+        if (comboSFX != null)
+        {
+            PlaySFX(comboSFX);
+            Debug.Log("Combo sound played!");
+        }
+    }
+
 }
